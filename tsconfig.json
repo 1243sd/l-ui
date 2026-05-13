@@ -1,17 +1,25 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "jsx": "preserve",
-    "sourceMap": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "lib": ["ES2020", "DOM"],
-    "types": ["vite/client"]
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@lolita-ui/tokens": ["packages/tokens/src/index.ts"],
+      "@lolita-ui/theme": ["packages/theme/src/index.ts"],
+      "@lolita-ui/components-vue": ["packages/components-vue/src/index.ts"],
+      "@lolita-ui/icons": ["packages/icons/src/index.ts"],
+      "@lolita-ui/utils": ["packages/utils/src/index.ts"],
+      "@lolita-ui/pro-vue": ["packages/pro-vue/src/index.ts"]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": [
+    "apps/**/*.ts",
+    "apps/**/*.d.ts",
+    "apps/**/*.vue",
+    "packages/**/*.ts",
+    "packages/**/*.d.ts",
+    "packages/**/*.vue",
+    "docs/.vitepress/**/*.ts",
+    "types/**/*.d.ts"
+  ]
 }

@@ -1,0 +1,69 @@
+{
+  "baseline": {
+    "strategy": "hybrid",
+    "coreSnapshot": "ant-design-vue@4.x (locked for core components)",
+    "edgePolicy": "follow latest minor behavior where safe"
+  },
+  "packages": {
+    "@lolita-ui/components-vue": {
+      "components": [
+        {
+          "name": "ConfigProvider",
+          "stage": "M0",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports prefixCls/componentSize/themeMode. Locale/direction are pending."
+        },
+        {
+          "name": "ThemeProvider",
+          "stage": "M0",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Delegates to @lolita-ui/theme provider and auto applies CSS variables."
+        },
+        {
+          "name": "Button",
+          "stage": "M0",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports type/size/loading/danger/block/disabled. shape enum pending."
+        },
+        {
+          "name": "Space",
+          "stage": "M0",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports direction/size/wrap/split. compact mode pending."
+        }
+      ]
+    },
+    "@lolita-ui/pro-vue": {
+      "components": [
+        {
+          "name": "ProSearchTable",
+          "stage": "M0",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Schema + slots + lifecycle + pagination link done. Full pagination widget and advanced field types pending."
+        }
+      ]
+    }
+  },
+  "nextQueue": [
+    {
+      "stage": "M1",
+      "component": "Input",
+      "reason": "Core dependency for Form ecosystem and Pro search ergonomics."
+    },
+    {
+      "stage": "M1",
+      "component": "Form",
+      "reason": "Validation and status wiring for schema-driven forms."
+    },
+    {
+      "stage": "M1",
+      "component": "Select",
+      "reason": "High-frequency control required by ProSearchTable schema."
+    }
+  ]
+}

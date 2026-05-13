@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@lolita-ui/tokens": ["packages/tokens/src/index.ts"],
+      "@lolita-ui/theme": ["packages/theme/src/index.ts"],
+      "@lolita-ui/components-vue": ["packages/components-vue/src/index.ts"],
+      "@lolita-ui/icons": ["packages/icons/src/index.ts"],
+      "@lolita-ui/utils": ["packages/utils/src/index.ts"],
+      "@lolita-ui/pro-vue": ["packages/pro-vue/src/index.ts"]
+    },
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false
+  },
+  "include": ["src/**/*"]
+}
