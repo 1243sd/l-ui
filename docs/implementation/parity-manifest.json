@@ -12,28 +12,217 @@
           "stage": "M0",
           "status": "implemented",
           "alignment": "partial",
-          "notes": "Supports prefixCls/componentSize/themeMode. Locale/direction are pending."
+          "notes": "Supports prefixCls, componentSize, and themeMode. Locale and direction are still pending."
         },
         {
           "name": "ThemeProvider",
           "stage": "M0",
           "status": "implemented",
           "alignment": "partial",
-          "notes": "Delegates to @lolita-ui/theme provider and auto applies CSS variables."
+          "notes": "Delegates to @lolita-ui/theme and auto applies CSS variables. Nested theme scopes are not implemented yet."
         },
         {
           "name": "Button",
           "stage": "M0",
           "status": "implemented",
           "alignment": "partial",
-          "notes": "Supports type/size/loading/danger/block/disabled. shape enum pending."
+          "notes": "Supports type, size, loading, danger, block, and disabled. Full shape enum is still pending."
         },
         {
           "name": "Space",
           "stage": "M0",
           "status": "implemented",
           "alignment": "partial",
-          "notes": "Supports direction/size/wrap/split. compact mode pending."
+          "notes": "Supports direction, size, wrap, align, and split. Compact mode is pending."
+        },
+        {
+          "name": "Input",
+          "stage": "M1",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports v-model:value, defaultValue, size inheritance, disabled, allowClear, status, and change/focus/blur emits. Prefix/suffix and extended input variants are pending."
+        },
+        {
+          "name": "Form",
+          "stage": "M1",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports model/rules validation, validate/resetFields, and form-level submit flow. Advanced layout and trigger strategies are pending."
+        },
+        {
+          "name": "FormItem",
+          "stage": "M1",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports field name binding, dynamic re-registration, help/error rendering, child status linkage, and valuePropName='checked'. labelCol/wrapperCol and advanced layout controls are pending."
+        },
+        {
+          "name": "Select",
+          "stage": "M1",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports single and multiple selection, local search, controlled searchValue, remote-search hooks via filterOption=false + search events, loading/notFoundContent states, keyboard navigation, and FormItem status linkage. Tags mode and virtualized remote data flows are pending."
+        },
+        {
+          "name": "Checkbox",
+          "stage": "M1",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports checked/defaultChecked, indeterminate, disabled, status, and FormItem checked-linkage. CheckboxGroup is pending."
+        },
+        {
+          "name": "Radio",
+          "stage": "M1",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports standalone checked/defaultChecked/value flow, disabled, name, and shared group selection. Radio button variants are pending."
+        },
+        {
+          "name": "RadioGroup",
+          "stage": "M1",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports value/defaultValue, options, disabled, name, status, update:value/change, and controlled undefined no-selection states. More advanced composition patterns are pending."
+        },
+        {
+          "name": "Switch",
+          "stage": "M1",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports checked/defaultChecked, disabled, status, role=switch semantics, and FormItem checked-linkage. Native checkbox submission semantics and checkedChildren/loading variants are pending."
+        },
+        {
+          "name": "Tabs",
+          "stage": "M2",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports activeKey/defaultActiveKey, items mode, TabPane mode, destroyInactiveTabPane, keyboard navigation, and disabled-skip behavior. Mixing items with TabPane warns and prefers TabPane. Editable tabs, vertical mode, and overflow handling are pending."
+        },
+        {
+          "name": "TabPane",
+          "stage": "M2",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Provides structured slot-based tab panels with tab, tabKey, and disabled support. Advanced pane lifecycle and richer header composition are pending."
+        },
+        {
+          "name": "Menu",
+          "stage": "M2",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports single-level items, selectedKeys/defaultSelectedKeys, vertical/horizontal navigation, roving focus, and disabled skipping. SubMenu, multiple mode, and openKeys are pending."
+        },
+        {
+          "name": "Tooltip",
+          "stage": "M2",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports open/defaultOpen, hover/focus trigger, four placements, disabled state, aria-describedby linkage, and teleported mounting. Click trigger, collision detection, and advanced overlay content are pending."
+        },
+        {
+          "name": "Popover",
+          "stage": "M2",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports open/defaultOpen, click/hover trigger, title/content slots, outside-click close in click mode, and teleported mounting. Complex interactive content and advanced placement logic are pending."
+        },
+        {
+          "name": "Dropdown",
+          "stage": "M2",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports menuItems, click/hover trigger, ArrowDown entry into the first enabled item, select-after-close flow, and teleported mounting. Custom overlay renderers and cascading menus are pending."
+        },
+        {
+          "name": "Modal",
+          "stage": "M2",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports open/defaultOpen, closable, maskClosable, keyboard, destroyOnClose, width, teleported mounting, focus return, and body scroll lock. Custom footer, async confirm, and stack management are pending."
+        },
+        {
+          "name": "Drawer",
+          "stage": "M2",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports open/defaultOpen, left/right placement, closable, maskClosable, keyboard, width, teleported mounting, focus return, and body scroll lock. Top/bottom placement, push behavior, and extra actions are pending."
+        },
+        {
+          "name": "Tag",
+          "stage": "M3",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports semantic color, bordered, round, and default slot rendering. Closable tags, arbitrary custom colors, and icon affordances are pending."
+        },
+        {
+          "name": "Badge",
+          "stage": "M3",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports semantic statuses, text, dot mode, and slot-wrapped content. Numeric count badges and Ribbon are pending."
+        },
+        {
+          "name": "Avatar",
+          "stage": "M3",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports src/alt, size inheritance, circle/square shape, fallbackText, and slot fallback. Error fallback flows and Avatar.Group are pending."
+        },
+        {
+          "name": "Pagination",
+          "stage": "M3",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports controlled and uncontrolled current page, pageSize, total, disabled state, and previous/next plus numeric paging. Quick jumper, page-size changer, and compact/simple variants are pending."
+        },
+        {
+          "name": "Table",
+          "stage": "M3",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports columns, dataSource, rowKey, loading, emptyText, bodyCell/empty slots, and built-in pagination linkage. Sorting, filtering, row selection, expandable rows, fixed columns, and virtual scrolling are pending."
+        },
+        {
+          "name": "List",
+          "stage": "M3",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports dataSource, loading, emptyText, split, and renderItem/empty slots. Grid, loadMore, infinite scroll, and header/footer extensions are pending."
+        },
+        {
+          "name": "DatePicker",
+          "stage": "M4",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports single-date selection, controlled/uncontrolled value flow, allowClear, format, disabled, openChange/change emits, and FormItem status linkage. RangePicker, showTime, and advanced calendar modes are pending."
+        },
+        {
+          "name": "Upload",
+          "stage": "M4",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports controlled/uncontrolled fileList, beforeUpload, customRequest, maxCount, removal, disabled, and button-triggered upload lists. Drag upload, chunking, preview, and richer transport layers are pending."
+        },
+        {
+          "name": "Tree",
+          "stage": "M4",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports single selection, expanded state control, disabled-node blocking, and basic keyboard navigation. Checkable, multi-select, async load, drag-and-drop, and virtualization are pending."
+        },
+        {
+          "name": "Cascader",
+          "stage": "M4",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports column-based single-path selection, controlled/uncontrolled value flow, allowClear, disabled, openChange/change emits, and FormItem status linkage. Multi-select, search, and remote lazy loading are pending."
+        },
+        {
+          "name": "Transfer",
+          "stage": "M4",
+          "status": "implemented",
+          "alignment": "partial",
+          "notes": "Supports dual-list transfer, controlled/uncontrolled targetKeys, selectedKeys synchronization, disabled items, and change emits. Search, pagination, tree/table transfer, and richer rendering APIs are pending."
         }
       ]
     },
@@ -41,29 +230,13 @@
       "components": [
         {
           "name": "ProSearchTable",
-          "stage": "M0",
+          "stage": "M5",
           "status": "implemented",
           "alignment": "partial",
-          "notes": "Schema + slots + lifecycle + pagination link done. Full pagination widget and advanced field types pending."
+          "notes": "Supports text/select/date/cascader search schema, formValues/queryValues layering, duplicate-key blocking, LPagination, rowKey enforcement, action refresh control, and deterministic playground/browser-gate coverage. dateRange, inline edit, column pinning, and remote schema builders remain out of scope."
         }
       ]
     }
   },
-  "nextQueue": [
-    {
-      "stage": "M1",
-      "component": "Input",
-      "reason": "Core dependency for Form ecosystem and Pro search ergonomics."
-    },
-    {
-      "stage": "M1",
-      "component": "Form",
-      "reason": "Validation and status wiring for schema-driven forms."
-    },
-    {
-      "stage": "M1",
-      "component": "Select",
-      "reason": "High-frequency control required by ProSearchTable schema."
-    }
-  ]
+  "nextQueue": []
 }

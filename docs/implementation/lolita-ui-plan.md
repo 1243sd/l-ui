@@ -39,6 +39,10 @@
 - 一次只推进一个组件或一个小批次（同类组件）。
 - 未完成测试证据前，不得将组件状态标记为“完成”。
 - 每次完成后，必须更新 `docs/memory/components-progress.md` 并写明“下一组件”。
+- 每个组件测试通过后，必须同步更新 `apps/playground` 的展示页；showcase 未更新，不得视为完成。
+- `apps/playground` 是当前本地 showcase 唯一准绳，禁止再以根目录 `src/` 作为展示入口。
+- 每个阶段完成后，必须产出下一阶段计划文件：`docs/implementation/stage-plans/*.md`。
+- 每个“下一阶段计划文件”必须是详细执行版，至少包含：边界、文件级产物、接口契约、测试矩阵、子代理任务卡、门禁、风险提问项。
 
 ## 5. 测试与发布门禁
 - 单测：`Vitest + Vue Test Utils`，覆盖 `props/emits/slots` 与边界行为。

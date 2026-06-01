@@ -23,7 +23,8 @@
     "typecheck": "vue-tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
-    "@lolita-ui/theme": "workspace:*"
+    "@lolita-ui/theme": "workspace:*",
+    "dayjs": "^1.11.20"
   },
   "peerDependencies": {
     "vue": "^3.5.14"

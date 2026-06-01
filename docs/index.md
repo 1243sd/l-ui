@@ -11,6 +11,7 @@ Lolita UI is a Vue 3 component library with a cute visual direction and Ant Desi
   - `ProSearchTable` (from `@lolita-ui/pro-vue`)
 - Dual theme support: `light` / `dark` via CSS variables.
 - Progress memory and next-component queue are maintained in `docs/memory`.
+- Next executable stage plan: `docs/implementation/stage-plans/M1-form-core.md`.
 
 ## Install (workspace/local)
 ```bash

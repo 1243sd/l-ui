@@ -1,6 +1,28 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 
+const toFsPath = (relativePath: string): string =>
+  decodeURIComponent(new URL(relativePath, import.meta.url).pathname).replace(
+    /^\/([A-Za-z]:)/,
+    '$1'
+  );
+
 export default defineConfig({
-  plugins: [vue()]
+  plugins: [vue()],
+  resolve: {
+    alias: [
+      {
+        find: /^@lolita-ui\/components-vue$/,
+        replacement: toFsPath('../../packages/components-vue/src/index.ts')
+      },
+      {
+        find: /^@lolita-ui\/pro-vue$/,
+        replacement: toFsPath('../../packages/pro-vue/src/index.ts')
+      },
+      {
+        find: /^@lolita-ui\/theme$/,
+        replacement: toFsPath('../../packages/theme/src/index.ts')
+      }
+    ]
+  }
 });
