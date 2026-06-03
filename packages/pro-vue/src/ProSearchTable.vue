@@ -102,16 +102,6 @@ const requestPipeline = createRequestPipeline<
       attempt: context.attempt
     });
   },
-  beforeQuery: async (payload) => {
-    if (!props.lifecycle.beforeQuery) {
-      return payload;
-    }
-    const next = await props.lifecycle.beforeQuery(payload);
-    if (next === false) {
-      throw skipSymbol;
-    }
-    return next;
-  },
   transform: async (result) => {
     if (!props.lifecycle.transform) {
       return result;
@@ -129,6 +119,21 @@ const requestPipeline = createRequestPipeline<
 const syncPagination = () => {
   if (props.paginationSync) {
     emit('update:pagination', { ...pagination });
+  }
+};
+
+const applyRequestedPagination = (next: { current: number; pageSize: number }) => {
+  const nextCurrent = Number.isFinite(next.current) ? Math.trunc(Number(next.current)) : pagination.current;
+  const nextPageSize = Number.isFinite(next.pageSize)
+    ? Math.trunc(Number(next.pageSize))
+    : pagination.pageSize;
+
+  if (nextCurrent > 0) {
+    pagination.current = nextCurrent;
+  }
+
+  if (nextPageSize > 0) {
+    pagination.pageSize = nextPageSize;
   }
 };
 
@@ -219,10 +224,21 @@ const runQuery = async () => {
   }
 
   try {
-    const execution = requestPipeline.execute({
+    const initialPayload = {
       ...payload,
       queryValues
-    });
+    };
+    const preparedPayload = props.lifecycle.beforeQuery
+      ? await props.lifecycle.beforeQuery(initialPayload)
+      : initialPayload;
+
+    if (preparedPayload === false) {
+      return;
+    }
+
+    applyRequestedPagination(preparedPayload.pagination);
+
+    const execution = requestPipeline.execute(preparedPayload);
     const result = await execution.promise;
     const validatedRows = validateResolvedRows(result.data);
     rows.value = validatedRows ?? [];

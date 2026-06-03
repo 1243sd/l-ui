@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import ProSearchTable from './ProSearchTable.vue';
-import type { ProSearchTableRequest } from './types';
+import type { ProSearchTableLifecycle, ProSearchTableRequest } from './types';
 
 const waitFor = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -221,6 +221,48 @@ describe('ProSearchTable', () => {
     await waitFor(60);
     expect(request).toHaveBeenCalledTimes(2);
     expect(wrapper.text()).toContain('ok');
+  });
+
+  it('reflects lifecycle-adjusted pagination in the rendered meta state', async () => {
+    const requestImpl: ProSearchTableRequest<Record<string, unknown>> = async ({
+      queryValues
+    }) => ({
+      data: [{ id: 'row-1', name: String(queryValues.keyword ?? '') }],
+      total: 5
+    });
+    const request = vi.fn(requestImpl);
+    const lifecycle: ProSearchTableLifecycle<Record<string, unknown>> = {
+      beforeQuery: async (payload) => ({
+        ...payload,
+        pagination: {
+          current: 2,
+          pageSize: 2
+        },
+        queryValues: {
+          ...payload.queryValues,
+          keyword: 'beta'
+        }
+      })
+    };
+
+    const wrapper = mount(ProSearchTable, {
+      props: {
+        autoQuery: false,
+        columns: [{ key: 'name', title: 'Name', dataIndex: 'name' }],
+        searchSchema: [{ name: 'keyword', label: 'Keyword', type: 'text', defaultValue: 'alpha' }],
+        lifecycle,
+        request
+      }
+    });
+
+    await wrapper.get('[data-testid="pro-search-submit"]').trigger('click');
+    await waitFor(20);
+
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request.mock.calls[0][0].pagination.current).toBe(2);
+    expect(request.mock.calls[0][0].queryValues.keyword).toBe('beta');
+    expect(wrapper.text()).toContain('beta');
+    expect(wrapper.text()).toContain('第 2/3 页');
   });
 
   it('uses row id as the default row key when every row has a primitive id', async () => {

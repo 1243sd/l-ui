@@ -120,7 +120,12 @@ describe('LDatePicker', () => {
     expect(wrapper.find('.l-date-picker-wrapper').classes()).toContain('l-date-picker-wrapper--error');
 
     await wrapper.find('.l-date-picker').trigger('click');
-    await wrapper.find('[data-date="2026-05-16"]').trigger('click');
+    const selectableDate = wrapper
+      .findAll('.l-date-picker-dropdown__cell')
+      .find((cell) => !cell.classes().includes('l-date-picker-dropdown__cell--muted'));
+
+    expect(selectableDate).toBeDefined();
+    await selectableDate!.trigger('click');
     await nextTick();
 
     expect(wrapper.text()).not.toContain('Birthday is required');
