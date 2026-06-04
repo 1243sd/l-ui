@@ -82,7 +82,7 @@
 - `E2E / 视觉回归 / A11y`：当前仓库尚未接入到 M4 的强制门禁，本次明确记为“未接入 / 未执行”，没有假装通过。
 
 ### 2026-05-26 - M5 收口证据
-- `rtk pnpm test`：35 files / 146 tests passed。
+- `rtk pnpm test`：35 files / 147 tests passed。
 - `rtk pnpm typecheck`：passed。
 - `rtk pnpm build`：passed。
 - `rtk pnpm docs:build`：passed。
@@ -109,7 +109,7 @@
 | --- | --- | --- | --- | --- |
 | M3 | M4 | `docs/implementation/stage-plans/M4-complex-data-feedback.md` | 已生成（详细执行版） | 2026-05-20 |
 | M4 | M5 | `docs/implementation/stage-plans/M5-pro-release-hardening.md` | 已完成（执行 + 收口） | 2026-05-26 |
-| M5 | M6 | `TBD` | 待规划 | 2026-05-26 |
+| M5 | M6 | `docs/implementation/stage-plans/M6-release-delivery-and-consumer-readiness.md` | 已生成（详细执行版，待确认后执行） | 2026-06-04 |
 
 ## 追加记录
 
@@ -206,10 +206,27 @@
 - 指派范围：本地主线集成，围绕 `ProSearchTable`、`apps/playground`、`Playwright` 门禁与治理真源同步推进。
 - 完成内容：
   - `ProSearchTable` 升级到 M5 公共契约：`text/select/date/cascader`、`formValues/queryValues` 分层、duplicate query key 阻断、默认 `id` 行身份、`rowKey` 告警与阻断、row actions 默认刷新与 `refreshOnSuccess: false`。
-  - 搜索区切换到 `LForm / LFormItem / LInput / LSelect / LDatePicker / LCascader`，并补 `Enter` 提交、显式查询 / 重置、失败保留旧行、重试入口、`LPagination` 真分页。
+  - 搜索区切换到 `LForm / LFormItem / LInput / LSelect / LDatePicker / LCascader`，并补 `Enter` 提交、显式查询 / 重置、失败保留旧行、重试入口、`LPagination` 真分页，以及 `beforeQuery` 改分页后 UI 元信息同步。
   - 接入 root browser gates：`test:e2e`、`test:visual`、`test:a11y`，并把 `apps/playground` 变成 deterministic QA surface。
   - `pro-basic` / `pro-error` 场景已落地到 playground，视觉基线与 A11y 门禁已基于 M5 场景更新。
-- 证据链接：`packages/pro-vue/src/ProSearchTable.spec.ts (11 passed)`、`packages/pro-vue/src/searchSchema.spec.ts (3 passed)`、`tests/playwright/e2e.spec.ts (5 passed)`、`tests/playwright/visual.spec.ts (6 passed)`、`tests/playwright/a11y.spec.ts (2 passed)`、`playwright.config.ts`。
+- 证据链接：`packages/pro-vue/src/ProSearchTable.spec.ts (12 passed)`、`packages/pro-vue/src/searchSchema.spec.ts (3 passed)`、`tests/playwright/e2e.spec.ts (5 passed)`、`tests/playwright/visual.spec.ts (6 passed)`、`tests/playwright/a11y.spec.ts (2 passed)`、`playwright.config.ts`。
 - 兼容备注：M5 仍明确不做 `dateRange`、inline edit、column pinning、drag sorting、preset persistence、remote schema builders；这些边界已同步到 `packages/pro-vue/COMPATIBILITY.md` 与 parity manifest。
 - Playground：`pro-search-table` section 已升级为 M5 showcase，并支持 `pro-basic / pro-error` 场景直达。
-- 下一阶段：待规划 M6。
+- 下一阶段：M6 发版交付与消费端就绪。
+- 下一阶段计划文件：`docs/implementation/stage-plans/M6-release-delivery-and-consumer-readiness.md`
+
+### [2026-06-04] M5 - 稳定性回补
+- 指派范围：本地主线针对已完成的 M5 合同做收口审查与最小修复。
+- 完成内容：
+  - 补回归测试，锁定 `beforeQuery` 修改 `pagination.current / pageSize` 后，请求层与表格元信息必须保持一致。
+  - 修正 `ProSearchTable` 的分页同步时机，避免生命周期已经切到新页码、UI 仍被旧 `total` 夹回第一页。
+  - 收稳 `LDatePicker` 的 `FormItem` 校验测试，改成选择当前面板内真实存在的日期格，不再依赖固定月份。
+- 测试结论：fresh `test / typecheck / build / docs:build / playground build / test:e2e / test:visual / test:a11y` 全部通过。
+- 证据链接：`packages/pro-vue/src/ProSearchTable.spec.ts (12 passed)`、`packages/components-vue/src/DatePicker.spec.ts (5 passed)`、`rtk pnpm test (35 files / 147 tests passed)`。
+
+### [2026-06-04] M6 - 计划生成
+- 指派范围：本地主线基于 M5 完成态，为下一阶段补齐详细执行计划与路线登记。
+- 计划方向：不继续先堆新业务能力，优先建立真实外部分发面，包括 package artifact contract、consumer smoke、release dry-run、体积预算与首发 checklist。
+- 计划文件：`docs/implementation/stage-plans/M6-release-delivery-and-consumer-readiness.md`
+- 路线同步：`docs/implementation/lolita-ui-plan.md`、`docs/implementation/plan.md`、本文件“下一阶段开发规划”已同步到 M6。
+- 待确认项：`changesets` 采用与否、首发支持面是否仅限 `Vite + Vue 3 + ESM`、M6 是否止于 dry-run 不做真实 publish。

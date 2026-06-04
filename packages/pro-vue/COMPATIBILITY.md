@@ -4,6 +4,7 @@
 
 - Aligned: `searchSchema` now supports `text`, `select`, `date`, and `cascader` with whitelisted field props instead of an unbounded escape hatch.
 - Aligned: request lifecycle payloads receive both `formValues` and `queryValues`, and field-level `toQuery` shaping is supported.
+- Aligned: `beforeQuery` may adjust `pagination.current` and `pageSize`, and the rendered pagination meta follows the adjusted request state.
 - Aligned: duplicate serialized query keys are treated as invalid configuration and block request execution with a development warning.
 - Aligned: the search area uses Lolita primitives (`LForm`, `LFormItem`, `LInput`, `LSelect`, `LDatePicker`, `LCascader`) rather than native inputs.
 - Aligned: row identity defaults to primitive `id`; otherwise `rowKey` is required and invalid row identity blocks rendering with a warning.

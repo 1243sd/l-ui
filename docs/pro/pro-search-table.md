@@ -5,6 +5,7 @@
 What it now locks in:
 - `searchSchema` supports `text`, `select`, `date`, and `cascader`
 - `request` receives both raw `formValues` and serialized `queryValues`
+- `beforeQuery` may adjust `pagination.current / pageSize`, and the rendered table meta follows the adjusted request state
 - text fields update immediately but only query on explicit submit or `Enter`
 - row identity defaults to primitive `id`, otherwise `rowKey` is required
 - row actions refresh on success by default and may opt out with `refreshOnSuccess: false`
@@ -92,7 +93,7 @@ Duplicate serialized query keys are invalid M5 configuration. The component warn
 - `formValues`: raw UI state keyed by schema field name
 - `queryValues`: serialized request payload after field-level shaping
 
-This keeps the UI contract stable even when the outgoing request shape differs from displayed field values.
+This keeps the UI contract stable even when the outgoing request shape differs from displayed field values. When `beforeQuery` adjusts `pagination.current` or `pageSize`, the rendered pagination meta follows the adjusted request state instead of staying on stale local values.
 
 ## Row Identity And Actions
 
@@ -115,6 +116,7 @@ Toolbar and row-action slots receive `refresh` in slot context so custom actions
 - typing in text fields does not auto-query
 - clicking the primary search action or pressing `Enter` in a text field triggers a query
 - reset restores schema defaults, resets pagination to page 1, and re-queries
+- lifecycle-adjusted pagination stays aligned between the outgoing request and the rendered table meta
 - loading keeps previous rows visible
 - query failure keeps previous rows visible and shows a retry action
 

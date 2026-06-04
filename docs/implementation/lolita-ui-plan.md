@@ -16,7 +16,7 @@
   - `@lolita-ui/pro-vue`（承载 `ProSearchTable`）
 - 对外主入口：`ConfigProvider`、`ThemeProvider`、`createLolitaTheme`、`install(app)`、按需导出。
 
-## 3. 分阶段落地（M0-M5）
+## 3. 分阶段落地（M0-M6）
 | 阶段 | 目标 | 关键交付 | 退出条件 |
 | --- | --- | --- | --- |
 | M0 基础能力 | 打稳工程与主题基础 | token、主题变量、Provider、构建与测试基线 | 构建/类型/单测链路可跑通 |
@@ -25,6 +25,7 @@
 | M3 数据展示主干 | 列表与表格基础 | Table、Pagination、Tag、Badge、Avatar、List | 排序/筛选/分页联动测试通过 |
 | M4 复杂组件 | 高复杂度业务组件 | DatePicker、Upload、Tree、Cascader、Transfer | 边界场景与错误处理稳定 |
 | M5 增强与收尾 | 业务增强与发布治理 | ProSearchTable、兼容清单、文档补全、发布门禁 | 全门禁通过，可独立发版 |
+| M6 发版交付与消费端就绪 | 首次外部分发与 consumer 验证 | package 产物契约、consumer smoke、changesets、release dry-run、体积预算 | `pack/consumer/release` 门禁全绿，可人工执行首发 |
 
 ## 4. 子代理职责与约束（防止记忆混乱）
 | 子代理 | 只负责 | 禁止做 |
