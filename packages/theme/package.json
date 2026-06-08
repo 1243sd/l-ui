@@ -1,16 +1,37 @@
 {
   "name": "@lolita-ui/theme",
   "version": "0.1.0",
+  "homepage": "https://github.com/1243sd/l-ui",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1243sd/l-ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/1243sd/l-ui/issues"
+  },
+  "keywords": [
+    "lolita-ui",
+    "vue",
+    "theme",
+    "design-tokens"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && pnpm run build:types",
+    "build:types": "vue-tsc -p tsconfig.build.json --emitDeclarationOnly",
     "typecheck": "vue-tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {

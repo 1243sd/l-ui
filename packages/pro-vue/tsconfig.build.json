@@ -1,8 +1,14 @@
 {
   "extends": "../../tsconfig.package.json",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@lolita-ui/components-vue": ["../components-vue/dist/index.d.ts"],
+      "@lolita-ui/utils": ["../utils/dist/index.d.ts"]
+    },
     "rootDir": "src",
     "outDir": "dist"
   },
-  "include": ["src/**/*.ts", "src/**/*.vue"]
+  "include": ["src/**/*.ts", "src/**/*.vue"],
+  "exclude": ["src/**/*.spec.ts"]
 }

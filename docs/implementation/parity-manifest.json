@@ -238,5 +238,10 @@
       ]
     }
   },
+  "release": {
+    "stage": "M6",
+    "status": "implemented",
+    "notes": "Publishable package contracts, tarball-based consumer smoke, changesets status, size budgets, and release dry-run are all in place. Real registry publish, credentials, and the final license decision remain manual."
+  },
   "nextQueue": []
 }

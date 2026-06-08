@@ -1,15 +1,36 @@
 {
   "name": "@lolita-ui/utils",
   "version": "0.1.0",
+  "homepage": "https://github.com/1243sd/l-ui",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1243sd/l-ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/1243sd/l-ui/issues"
+  },
+  "keywords": [
+    "lolita-ui",
+    "vue",
+    "utilities",
+    "design-system"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "node ../../scripts/release/clean-package-dist.mjs utils && tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   }
 }

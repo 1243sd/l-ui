@@ -8,7 +8,13 @@ export default defineConfig({
       fileName: 'index'
     },
     rollupOptions: {
-      external: ['vue', '@lolita-ui/tokens']
+      external: ['vue', '@lolita-ui/tokens'],
+      output: {
+        globals: {
+          vue: 'Vue',
+          '@lolita-ui/tokens': 'LolitaTokens'
+        }
+      }
     }
   }
 });

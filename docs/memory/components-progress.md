@@ -39,6 +39,7 @@
 | 2026-05-21 | M4 | LCascader | Core Components Agent | 已完成 | `packages/components-vue/src/components/Cascader.ts` |
 | 2026-05-21 | M4 | LTransfer | Core Components Agent | 已完成 | `packages/components-vue/src/components/Transfer.ts` |
 | 2026-05-26 | M5 | ProSearchTable / Browser Gates | 本地主线集成 | 已完成 | `packages/pro-vue/src/ProSearchTable.vue` + `tests/playwright/*.spec.ts` + `playwright.config.ts` |
+| 2026-06-08 | M6 | Release Delivery / Consumer Readiness | 本地主线集成 | 已完成 | `apps/consumer-smoke/*` + `scripts/release/*` + `.changeset/*` + `docs/release/*` |
 
 ## 当前门禁快照
 
@@ -91,6 +92,14 @@
 - `rtk pnpm test:visual`：6 passed，required smoke matrix 覆盖 `shell` / `overlay-modal` / `pro-basic` 的 `light` 与 `dark`。
 - `rtk pnpm test:a11y`：2 passed。
 
+### 2026-06-08 - M6 收口证据
+- `rtk pnpm release:dry-run`：passed。
+- `release:dry-run` fresh 串起并通过：`build`、`docs:build`、`pack:check`、`consumer:build`、`test:consumer`、`size:check`、`changeset:status`。
+- `rtk pnpm pack:check`：passed，发布包契约覆盖 `components-vue`、`pro-vue`、`theme`、`utils`、`tokens`、`icons`，并阻断 `.spec/.test` 产物混入 `dist`。
+- `rtk pnpm consumer:build`：passed，tarball consumer runtime 在 `.artifacts/consumer-smoke-runtime` 重建成功。
+- `rtk pnpm test:consumer`：1 passed，外部消费端基于 tarball 完成主题、基础组件与 `ProSearchTable` 的最小浏览器 smoke。
+- `rtk pnpm size:check`：passed，JS / CSS / tarball 体积均落在基线阈值内。
+
 ## M2 兼容摘要
 
 | 组件 | 已覆盖边界 | 当前差异 / 未覆盖边界 |
@@ -109,7 +118,9 @@
 | --- | --- | --- | --- | --- |
 | M3 | M4 | `docs/implementation/stage-plans/M4-complex-data-feedback.md` | 已生成（详细执行版） | 2026-05-20 |
 | M4 | M5 | `docs/implementation/stage-plans/M5-pro-release-hardening.md` | 已完成（执行 + 收口） | 2026-05-26 |
-| M5 | M6 | `docs/implementation/stage-plans/M6-release-delivery-and-consumer-readiness.md` | 已生成（详细执行版，待确认后执行） | 2026-06-04 |
+| M5 | M6 | `docs/implementation/stage-plans/M6-release-delivery-and-consumer-readiness.md` | 已完成（执行 + 收口） | 2026-06-08 |
+| M6 | M7 | `docs/implementation/stage-plans/M7-advanced-pro-data-workflows.md` | 已生成（详细执行版） | 2026-06-08 |
+| M7 | M8 | `docs/implementation/stage-plans/M8-pro-preferences-and-persistence.md` | 待生成 | - |
 
 ## 追加记录
 
@@ -230,3 +241,23 @@
 - 计划文件：`docs/implementation/stage-plans/M6-release-delivery-and-consumer-readiness.md`
 - 路线同步：`docs/implementation/lolita-ui-plan.md`、`docs/implementation/plan.md`、本文件“下一阶段开发规划”已同步到 M6。
 - 待确认项：`changesets` 采用与否、首发支持面是否仅限 `Vite + Vue 3 + ESM`、M6 是否止于 dry-run 不做真实 publish。
+
+### [2026-06-08] M6 - Release Delivery / Consumer Readiness
+- 指派范围：本地主线围绕 publishable package contracts、tarball consumer smoke、release governance 与真源同步推进。
+- 完成内容：
+  - 统一 `components-vue / pro-vue / theme / utils / tokens / icons` 的发布面：`types`、root `exports`、`files`、CSS 入口、repository/homepage/bugs/keywords metadata 与 `sideEffects` 约束全部补齐到可对外交付的 `dist` 契约。
+  - 建立 `apps/consumer-smoke` 模板与 `.artifacts/consumer-smoke-runtime` 安装链路；外部 consumer 通过本地 tarball 安装 `@lolita-ui/theme`、`@lolita-ui/components-vue`、`@lolita-ui/pro-vue`，并完成主题、基础组件与 `ProSearchTable` 的 deterministic browser smoke。
+  - 接入 `changesets`、`release:dry-run`、`size:check`、`docs/release/*`，把首发前的 dry-run、体积预算与人工 checklist 固定成仓库真命令与真文档。
+  - 补了纯 `tsc` 包的 `dist` 清理与 `*.spec.ts` 排除规则，`pack:check` 现在会主动阻断 `.spec/.test` 产物混入发布包。
+- 测试结论：fresh `rtk pnpm release:dry-run` 全绿；其中串起并通过 `build / docs:build / pack:check / consumer:build / test:consumer / size:check / changeset:status`。
+- 证据链接：`apps/consumer-smoke/*`、`scripts/release/pack-check.mjs`、`scripts/release/consumer-install.mjs`、`scripts/release/size-budget-check.mjs`、`scripts/release/release-dry-run.mjs`、`playwright.consumer.config.ts`、`tests/playwright/consumer.spec.ts`、`docs/release/first-release-checklist.md`、`docs/release/consumer-installation.md`、`docs/release/size-budgets.json`。
+- 兼容备注：M6 首发消费面明确只锁 `Vite + Vue 3 + ESM` 主链路；真实 registry publish、最终 license 决策与凭据校验仍保留人工动作，不在本阶段自动执行。
+- 下一阶段：M7 高级 Pro 数据工作流。
+- 下一阶段计划文件：`docs/implementation/stage-plans/M7-advanced-pro-data-workflows.md`。
+
+### [2026-06-08] M7 - 计划生成
+- 指派范围：本地主线基于已完成的 M5 Pro 合同与 M6 交付面，生成下一阶段的详细执行版计划。
+- 计划方向：优先把后台最真实的高级数据工作流做成闭环，包括 `dateRange` 搜索、`LTable` 排序/选择底座，以及 `ProSearchTable` 的批量操作与排序请求契约。
+- 计划文件：`docs/implementation/stage-plans/M7-advanced-pro-data-workflows.md`
+- 路线同步：`docs/implementation/lolita-ui-plan.md`、`docs/implementation/plan.md`、本文件“下一阶段开发规划”已同步指向 M7。
+- 明确延后：inline edit、column pinning、preset persistence、remote schema builders、多列排序、列级 filters。

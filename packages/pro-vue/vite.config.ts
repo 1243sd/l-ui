@@ -10,7 +10,15 @@ export default defineConfig({
       fileName: 'index'
     },
     rollupOptions: {
-      external: ['vue', '@lolita-ui/components-vue', '@lolita-ui/utils', 'dayjs']
+      external: ['vue', '@lolita-ui/components-vue', '@lolita-ui/utils', 'dayjs'],
+      output: {
+        globals: {
+          vue: 'Vue',
+          '@lolita-ui/components-vue': 'LolitaComponentsVue',
+          '@lolita-ui/utils': 'LolitaUtils',
+          dayjs: 'dayjs'
+        }
+      }
     }
   }
 });

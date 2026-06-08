@@ -16,7 +16,7 @@
   - `@lolita-ui/pro-vue`（承载 `ProSearchTable`）
 - 对外主入口：`ConfigProvider`、`ThemeProvider`、`createLolitaTheme`、`install(app)`、按需导出。
 
-## 3. 分阶段落地（M0-M6）
+## 3. 分阶段落地（M0-M7）
 | 阶段 | 目标 | 关键交付 | 退出条件 |
 | --- | --- | --- | --- |
 | M0 基础能力 | 打稳工程与主题基础 | token、主题变量、Provider、构建与测试基线 | 构建/类型/单测链路可跑通 |
@@ -26,6 +26,13 @@
 | M4 复杂组件 | 高复杂度业务组件 | DatePicker、Upload、Tree、Cascader、Transfer | 边界场景与错误处理稳定 |
 | M5 增强与收尾 | 业务增强与发布治理 | ProSearchTable、兼容清单、文档补全、发布门禁 | 全门禁通过，可独立发版 |
 | M6 发版交付与消费端就绪 | 首次外部分发与 consumer 验证 | package 产物契约、consumer smoke、changesets、release dry-run、体积预算 | `pack/consumer/release` 门禁全绿，可人工执行首发 |
+| M7 高级 Pro 数据工作流 | 后台高频数据工作流闭环 | `dateRange` 搜索、`LTable` 排序/选择、`ProSearchTable` 批量操作与排序请求契约 | 高级工作流门禁全绿，且不破坏 M6 交付面 |
+
+## 3.1 当前执行状态
+- M0-M6 已完成并收口，当前仓库已经具备“可 dry-run、可人工首发”的对外交付状态。
+- M6 最新证据链路为：`pack:check`、`consumer:build`、`test:consumer`、`size:check`、`release:dry-run` 全绿。
+- 首发消费面当前只锁 `Vite + Vue 3 + ESM`；真实 registry publish、最终 license 决策与凭据校验仍保留人工动作。
+- 下一执行阶段为 `M7 advanced pro data workflows`，详细计划已生成：`docs/implementation/stage-plans/M7-advanced-pro-data-workflows.md`。
 
 ## 4. 子代理职责与约束（防止记忆混乱）
 | 子代理 | 只负责 | 禁止做 |

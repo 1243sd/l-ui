@@ -26,6 +26,7 @@ import type {
   ProTableColumn,
   ProToolbarAction,
   SearchFieldSchema,
+  SearchFieldSelectValue,
   SearchQueryValues
 } from './types';
 
@@ -300,6 +301,23 @@ const resolveFieldWidth = (width: SearchFieldSchema['width']): string | undefine
   return width;
 };
 
+const isSelectFieldValue = (value: unknown): value is SearchFieldSelectValue =>
+  typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
+
+const resolveSelectFieldValue = (
+  fieldName: string
+): SearchFieldSelectValue | undefined => {
+  const value = formValues[fieldName];
+  return isSelectFieldValue(value) ? value : undefined;
+};
+
+const resolveCascaderFieldValue = (fieldName: string): string[] | undefined => {
+  const value = formValues[fieldName];
+  return Array.isArray(value) && value.every((item) => typeof item === 'string')
+    ? value
+    : undefined;
+};
+
 const visibleToolbarActions = computed(() =>
   props.toolbar.filter((item) => item.visible !== false)
 );
@@ -355,7 +373,7 @@ defineExpose({
                 <LSelect
                   v-else-if="field.type === 'select'"
                   :options="field.options"
-                  :value="formValues[field.name]"
+                  :value="resolveSelectFieldValue(field.name)"
                   :placeholder="field.placeholder || `请选择${field.label}`"
                   v-bind="field.selectProps"
                   @update:value="(nextValue) => (formValues[field.name] = nextValue)"
@@ -374,7 +392,7 @@ defineExpose({
                 <LCascader
                   v-else
                   :options="field.options"
-                  :value="Array.isArray(formValues[field.name]) ? formValues[field.name] : undefined"
+                  :value="resolveCascaderFieldValue(field.name)"
                   :placeholder="field.placeholder || `请选择${field.label}`"
                   v-bind="field.cascaderProps"
                   @update:value="(nextValue) => (formValues[field.name] = nextValue)"

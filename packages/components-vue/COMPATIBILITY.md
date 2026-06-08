@@ -148,3 +148,12 @@
 - 已对齐：`dataSource`、`targetKeys` / `defaultTargetKeys`、`selectedKeys`、`disabled`、`update:targetKeys` / `update:selectedKeys` / `change`。
 - 已对齐：双栏列表映射、勾选状态、左右移动、受控 / 非受控同步，以及禁用项阻断。
 - 差异：当前不覆盖搜索、分页、树穿梭、表格穿梭和自定义渲染器体系。
+
+## M6 发布与消费约束
+
+### Package Delivery (`@lolita-ui/components-vue`)
+- 已对齐：`types`、root `exports`、`files`、`sideEffects` 与 `./style.css` 全部固定到 `dist` 发布面，不再要求消费方读取 workspace 源码目录。
+- 已对齐：tarball consumer smoke 已验证 `@lolita-ui/components-vue` 的 named imports、样式导入与主题注入可在独立 `Vite + Vue 3` app 中正常工作。
+- 已对齐：`pack:check` 会阻断 `.spec/.test` 产物混入 `dist`，降低测试文件误进发布包的回归风险。
+- 差异：当前首发只承诺 `Vite + Vue 3 + ESM` 主消费路径，不承诺 `Nuxt / SSR / CDN script-tag`。
+- 差异：真实 registry publish、最终 license 决策与凭据校验仍保留人工步骤，不在 M6 自动完成。

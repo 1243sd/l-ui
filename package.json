@@ -2,11 +2,25 @@
   "name": "lolita-ui-workspace",
   "private": true,
   "version": "0.1.0",
+  "homepage": "https://github.com/1243sd/l-ui",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1243sd/l-ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/1243sd/l-ui/issues"
+  },
   "type": "module",
   "packageManager": "pnpm@9.12.3",
   "scripts": {
     "dev": "pnpm --filter @lolita-ui/playground dev",
     "build": "pnpm -r --filter \"./packages/*\" build",
+    "pack:check": "node scripts/release/pack-check.mjs",
+    "changeset:status": "pnpm changeset status",
+    "consumer:install": "pnpm pack:check && node scripts/release/consumer-install.mjs",
+    "consumer:build": "pnpm consumer:install && pnpm --dir .artifacts/consumer-smoke-runtime --ignore-workspace build",
+    "test:consumer": "playwright test --config playwright.consumer.config.ts",
+    "size:check": "node scripts/release/size-budget-check.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test --project=e2e",
     "test:visual": "playwright test --project=visual",
@@ -14,10 +28,12 @@
     "test:watch": "vitest",
     "typecheck": "pnpm -r --filter \"./packages/*\" typecheck",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs"
+    "docs:build": "vitepress build docs",
+    "release:dry-run": "node scripts/release/release-dry-run.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
+    "@changesets/cli": "^2.31.0",
     "@playwright/test": "^1.55.0",
     "@types/node": "^25.9.1",
     "@vitejs/plugin-vue": "^5.2.4",
@@ -30,5 +46,10 @@
     "vitest": "^3.2.4",
     "vue": "^3.5.14",
     "vue-tsc": "^2.2.10"
+  },
+  "pnpm": {
+    "overrides": {
+      "human-id": "4.1.1"
+    }
   }
 }

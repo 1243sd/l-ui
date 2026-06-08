@@ -1,0 +1,39 @@
+{
+  "thresholds": {
+    "jsPercent": 15,
+    "cssPercent": 15,
+    "tarballPercent": 20
+  },
+  "packages": {
+    "@lolita-ui/components-vue": {
+      "jsBytes": 126131,
+      "cssBytes": 54797,
+      "tarballBytes": 76145
+    },
+    "@lolita-ui/icons": {
+      "jsBytes": 114,
+      "cssBytes": null,
+      "tarballBytes": 3956
+    },
+    "@lolita-ui/pro-vue": {
+      "jsBytes": 15590,
+      "cssBytes": 2241,
+      "tarballBytes": 12767
+    },
+    "@lolita-ui/theme": {
+      "jsBytes": 2047,
+      "cssBytes": null,
+      "tarballBytes": 3854
+    },
+    "@lolita-ui/tokens": {
+      "jsBytes": 287,
+      "cssBytes": null,
+      "tarballBytes": 2928
+    },
+    "@lolita-ui/utils": {
+      "jsBytes": 98,
+      "cssBytes": null,
+      "tarballBytes": 6185
+    }
+  }
+}

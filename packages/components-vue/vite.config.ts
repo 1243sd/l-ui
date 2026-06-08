@@ -8,7 +8,14 @@ export default defineConfig({
       fileName: 'index'
     },
     rollupOptions: {
-      external: ['vue', '@lolita-ui/theme']
+      external: ['vue', '@lolita-ui/theme'],
+      output: {
+        exports: 'named',
+        globals: {
+          vue: 'Vue',
+          '@lolita-ui/theme': 'LolitaTheme'
+        }
+      }
     }
   }
 });
