@@ -7,6 +7,7 @@ import {
   LCheckbox,
   LConfigProvider,
   LDatePicker,
+  LDateRangePicker,
   LDrawer,
   LDropdown,
   LForm,
@@ -38,12 +39,14 @@ import type {
   InputStatus,
   SelectOption,
   TableColumn,
+  TableSortState,
   TransferItem,
   TreeNode,
   UploadFile
 } from '@lolita-ui/components-vue';
 import {
   ProSearchTable,
+  type ProBulkAction,
   type ProRowAction,
   type ProSearchTableRequest,
   type ProTableColumn,
@@ -212,6 +215,7 @@ const selectValue = ref<string | undefined>('香草云朵');
 const selectStatus = ref<InputStatus>('default');
 const multipleSelectValues = ref<string[]>(['草莓奶霜', '海盐焦糖']);
 const datePickerValue = ref<string | undefined>('2026-05-14');
+const dateRangePickerValue = ref<[string, string] | undefined>(['2026-05-14', '2026-05-20']);
 const datePickerStatus = ref<InputStatus>('default');
 const uploadFileList = ref<UploadFile[]>([]);
 const remoteSelectValue = ref<string | undefined>();
@@ -240,7 +244,9 @@ const treeExpandedKeys = ref<string[]>(['team']);
 const cascaderValue = ref<string[] | undefined>(['zhejiang', 'hangzhou', 'xihu']);
 const transferTargetKeys = ref<string[]>(['beta']);
 const transferSelectedKeys = ref<string[]>([]);
+const proSelectedRowKeys = ref<string[]>([]);
 const rootFormRef = ref<{ resetFields: () => void } | null>(null);
+const proTableRef = ref<{ refresh: () => Promise<void> } | null>(null);
 const formFeedback = ref('提交表单后，可以在这里看到完成和失败的反馈。');
 let remoteSearchTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -479,10 +485,10 @@ const proRows: ShowcaseTableRow[] = [
 
 const columns: ProTableColumn<ShowcaseTableRow>[] = [
   { key: 'id', title: '编号', dataIndex: 'id' },
-  { key: 'name', title: '成员', dataIndex: 'name' },
+  { key: 'name', title: '成员', dataIndex: 'name', sortable: true },
   { key: 'role', title: '角色', dataIndex: 'role' },
   { key: 'city', title: '城市', dataIndex: 'city' },
-  { key: 'releasedAt', title: '发布日期', dataIndex: 'releasedAt' }
+  { key: 'releasedAt', title: '发布日期', dataIndex: 'releasedAt', sortable: true }
 ];
 
 const searchSchema: SearchFieldSchema[] = [
@@ -510,6 +516,12 @@ const searchSchema: SearchFieldSchema[] = [
     datePickerProps: { allowClear: true }
   },
   {
+    name: 'window',
+    label: '发布日期范围',
+    type: 'dateRange',
+    dateRangePickerProps: { allowClear: true }
+  },
+  {
     name: 'region',
     label: '地区',
     type: 'cascader',
@@ -520,14 +532,25 @@ const searchSchema: SearchFieldSchema[] = [
 
 const proErrorArmed = ref(qaScenario === 'pro-error');
 const proFeedback = ref('点击查询、翻页、重试或行操作后，这里会记录当前演示状态。');
+const proRowSelection = computed(() => ({
+  selectedRowKeys: proSelectedRowKeys.value,
+  getDisabled: (row: ShowcaseTableRow) => row.id === 'user-2'
+}));
+
+const isDateRangeQueryValue = (value: unknown): value is [string, string] =>
+  Array.isArray(value) &&
+  value.length === 2 &&
+  value.every((item) => typeof item === 'string');
 
 const buildDeterministicResult = (
   queryValues: Record<string, unknown>,
-  pagination: { current: number; pageSize: number }
+  pagination: { current: number; pageSize: number },
+  sortState: TableSortState | undefined
 ) => {
   const keyword = String(queryValues.keyword ?? '').trim().toLowerCase();
   const role = String(queryValues.role ?? '').trim();
   const releasedAt = String(queryValues.releasedAt ?? '').trim();
+  const window = isDateRangeQueryValue(queryValues.window) ? queryValues.window : undefined;
   const region = Array.isArray(queryValues.region)
     ? queryValues.region.filter((item): item is string => typeof item === 'string')
     : [];
@@ -536,23 +559,40 @@ const buildDeterministicResult = (
     const matchesKeyword = keyword.length === 0 || item.name.toLowerCase().includes(keyword);
     const matchesRole = role.length === 0 || item.role === role;
     const matchesReleasedAt = releasedAt.length === 0 || item.releasedAt === releasedAt;
+    const matchesWindow =
+      !window ||
+      (item.releasedAt >= window[0] && item.releasedAt <= window[1]);
     const matchesRegion =
       region.length === 0 ||
       region.every((segment, index) => item.region[index] === segment);
 
-    return matchesKeyword && matchesRole && matchesReleasedAt && matchesRegion;
+    return matchesKeyword && matchesRole && matchesReleasedAt && matchesWindow && matchesRegion;
   });
+
+  const sorted = [...filtered];
+  if (sortState) {
+    sorted.sort((left, right) => {
+      const leftValue = String(left[sortState.columnKey as keyof ShowcaseTableRow] ?? '');
+      const rightValue = String(right[sortState.columnKey as keyof ShowcaseTableRow] ?? '');
+      return leftValue.localeCompare(rightValue, 'zh-CN', { numeric: true });
+    });
+
+    if (sortState.order === 'descend') {
+      sorted.reverse();
+    }
+  }
 
   const start = (pagination.current - 1) * pagination.pageSize;
   return {
-    data: filtered.slice(start, start + pagination.pageSize),
-    total: filtered.length
+    data: sorted.slice(start, start + pagination.pageSize),
+    total: sorted.length
   };
 };
 
 const request: ProSearchTableRequest<ShowcaseTableRow> = async ({
   pagination,
   queryValues,
+  sortState,
   signal
 }) => {
   await new Promise((resolve) => setTimeout(resolve, 180));
@@ -567,8 +607,9 @@ const request: ProSearchTableRequest<ShowcaseTableRow> = async ({
     throw new Error('Injected QA error');
   }
 
-  const result = buildDeterministicResult(queryValues, pagination);
-  proFeedback.value = `当前返回 ${result.total} 条结果，第 ${pagination.current} 页。`;
+  const result = buildDeterministicResult(queryValues, pagination, sortState);
+  const sortSummary = sortState ? `，按 ${sortState.columnKey} ${sortState.order}` : '';
+  proFeedback.value = `当前返回 ${result.total} 条结果，第 ${pagination.current} 页${sortSummary}。`;
   return result;
 };
 
@@ -589,6 +630,38 @@ const proRowActions: ProRowAction<ShowcaseTableRow>[] = [
     }
   }
 ];
+
+const proBulkActions: ProBulkAction<ShowcaseTableRow>[] = [
+  {
+    key: 'archive',
+    label: '批量归档',
+    onClick: async ({ selectedRows }) => {
+      proFeedback.value = `已批量归档 ${selectedRows.map((row) => row.name).join('、')}。`;
+    }
+  }
+];
+
+const proToolbarActions = computed(() => [
+  {
+    key: 'create',
+    label: '新增成员',
+    type: 'primary' as const,
+    onClick: async () => {
+      proFeedback.value = '已触发新增成员流程（演示态）。';
+    }
+  },
+  {
+    key: 'refresh',
+    label: '刷新结果',
+    onClick: async () => {
+      await proTableRef.value?.refresh();
+    }
+  }
+]);
+
+const onProSelectedRowKeysChange = (nextKeys: Array<string | number>) => {
+  proSelectedRowKeys.value = nextKeys.filter((key): key is string => typeof key === 'string');
+};
 
 const currentThemeLabel = computed(() => (mode.value === 'dark' ? '月夜' : '棉花糖'));
 const currentModeText = computed(() => (mode.value === 'dark' ? '深色' : '浅色'));
@@ -1644,9 +1717,9 @@ onBeforeUnmount(() => {
         <section id="date-picker" class="showcase-section" aria-labelledby="date-picker-title">
           <div class="section-heading">
             <span class="showcase-kicker">M4 复杂组件</span>
-            <h3 id="date-picker-title">DatePicker</h3>
+            <h3 id="date-picker-title">DatePicker / DateRangePicker</h3>
             <p>
-              M4 先从单日期选择切入，当前只做单日期主链路，不提前混入 showTime、RangePicker
+              M4 先把单日期和基础日期范围主链路打稳，当前不提前混入 showTime、快捷范围
               和复杂日历体系。
             </p>
           </div>
@@ -1692,21 +1765,35 @@ onBeforeUnmount(() => {
 
             <article class="demo-panel">
               <div class="demo-panel__head">
-                <h4>与表单联动</h4>
-                <p>FormItem 会把错误态回灌给 DatePicker 外壳，先把这条链路打稳。</p>
+                <h4>日期范围与表单联动</h4>
+                <p>范围选择只做基础开始/结束语义，但继续沿用同一套 FormItem 反馈语言。</p>
               </div>
-              <LForm :model="{ releaseDate: datePickerValue }">
-                <LFormItem label="发布日期" help="当前示例只展示字段联动，不重复触发表单提交流程。">
-                  <LDatePicker
-                    v-model:value="datePickerValue"
+              <LSpace wrap :size="[10, 10]">
+                <LButton type="dashed" @click="dateRangePickerValue = undefined">
+                  清空范围
+                </LButton>
+                <LButton
+                  type="default"
+                  @click="dateRangePickerValue = ['2026-05-14', '2026-05-20']"
+                >
+                  恢复示例范围
+                </LButton>
+              </LSpace>
+              <LForm :model="{ releaseWindow: dateRangePickerValue }">
+                <LFormItem
+                  label="发布日期范围"
+                  help="当前示例只展示范围值联动，不提前扩到快捷范围与时间维度。"
+                >
+                  <LDateRangePicker
+                    v-model:value="dateRangePickerValue"
                     format="YYYY/MM/DD"
-                    placeholder="选择发布日期"
+                    allow-clear
                   />
                 </LFormItem>
               </LForm>
               <div class="demo-readout">
-                <span>格式化输出</span>
-                <strong>{{ datePickerValue ?? '未选择' }}</strong>
+                <span>当前范围</span>
+                <strong>{{ dateRangePickerValue?.join(' ~ ') ?? '未选择' }}</strong>
               </div>
             </article>
           </div>
@@ -1829,23 +1916,22 @@ onBeforeUnmount(() => {
           </div>
 
           <article class="demo-panel demo-panel--table">
+            <div v-if="qaScenario === 'pro-error'" class="inline-note">
+              <LTag color="warning">已注入一次错误，重试后恢复</LTag>
+            </div>
             <ProSearchTable
+              ref="proTableRef"
               :columns="columns"
               :search-schema="searchSchema"
               :request="request"
+              :row-selection="proRowSelection"
+              :bulk-actions="proBulkActions"
+              :toolbar="proToolbarActions"
               :row-actions="proRowActions"
               :retries="qaScenario === 'pro-error' ? 0 : 1"
               :initial-pagination="{ current: 1, pageSize: 6, total: 0 }"
-            >
-              <template #toolbar="{ refresh }">
-                <LSpace wrap>
-                  <LButton type="dashed" @click="refresh">刷新结果</LButton>
-                  <LTag v-if="qaScenario === 'pro-error'" color="warning">
-                    已注入一次错误，重试后恢复
-                  </LTag>
-                </LSpace>
-              </template>
-            </ProSearchTable>
+              @update:selected-row-keys="onProSelectedRowKeysChange"
+            />
             <div class="demo-readout">
               <span>场景反馈</span>
               <strong>{{ proFeedback }}</strong>

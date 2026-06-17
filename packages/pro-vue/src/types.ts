@@ -1,4 +1,10 @@
-import type { CascaderOption, TableRowKey } from '@lolita-ui/components-vue';
+import type {
+  ButtonType,
+  CascaderOption,
+  TableRowKey,
+  TableRowSelection,
+  TableSortState
+} from '@lolita-ui/components-vue';
 import type { VNodeChild } from 'vue';
 
 export type ProPagination = {
@@ -20,6 +26,7 @@ export type ProQueryPayload<
   };
   formValues: TForm;
   queryValues: TQuery;
+  sortState?: TableSortState;
   signal: AbortSignal;
   attempt: number;
 };
@@ -41,18 +48,30 @@ export type ProSearchTableLifecycle<
   TQuery extends SearchQueryValues = SearchQueryValues
 > = {
   beforeQuery?: (
-    payload: Pick<ProQueryPayload<TForm, TQuery>, 'pagination' | 'formValues' | 'queryValues'>
+    payload: Pick<
+      ProQueryPayload<TForm, TQuery>,
+      'pagination' | 'formValues' | 'queryValues' | 'sortState'
+    >
   ) =>
-    | Pick<ProQueryPayload<TForm, TQuery>, 'pagination' | 'formValues' | 'queryValues'>
+    | Pick<
+        ProQueryPayload<TForm, TQuery>,
+        'pagination' | 'formValues' | 'queryValues' | 'sortState'
+      >
     | false
     | Promise<
-        | Pick<ProQueryPayload<TForm, TQuery>, 'pagination' | 'formValues' | 'queryValues'>
+        | Pick<
+            ProQueryPayload<TForm, TQuery>,
+            'pagination' | 'formValues' | 'queryValues' | 'sortState'
+          >
         | false
       >;
   transform?: (result: ProSearchTableResult<TRow>) => ProSearchTableResult<TRow> | Promise<ProSearchTableResult<TRow>>;
   afterQuery?: (
     result: ProSearchTableResult<TRow>,
-    payload: Pick<ProQueryPayload<TForm, TQuery>, 'pagination' | 'formValues' | 'queryValues'>
+    payload: Pick<
+      ProQueryPayload<TForm, TQuery>,
+      'pagination' | 'formValues' | 'queryValues' | 'sortState'
+    >
   ) => void | Promise<void>;
 };
 
@@ -105,6 +124,19 @@ export type SearchDateField = SearchFieldBase & {
   toQuery?: (value: string | undefined, formValues: SearchFormValues) => SearchQueryValues;
 };
 
+export type SearchDateRangeField = SearchFieldBase & {
+  type: 'dateRange';
+  defaultValue?: [string, string];
+  dateRangePickerProps?: {
+    allowClear?: boolean;
+    format?: string;
+  };
+  toQuery?: (
+    value: [string, string] | undefined,
+    formValues: SearchFormValues
+  ) => SearchQueryValues;
+};
+
 export type SearchCascaderField = SearchFieldBase & {
   type: 'cascader';
   options: CascaderOption[];
@@ -119,7 +151,19 @@ export type SearchFieldSchema =
   | SearchTextField
   | SearchSelectField
   | SearchDateField
+  | SearchDateRangeField
   | SearchCascaderField;
+
+export type ProActionIcon =
+  | 'archive'
+  | 'close'
+  | 'eye'
+  | 'filter'
+  | 'plus'
+  | 'refresh'
+  | 'reset'
+  | 'search'
+  | 'sparkles';
 
 export type ProTableColumn<TRow> = {
   key: string;
@@ -127,10 +171,17 @@ export type ProTableColumn<TRow> = {
   dataIndex?: keyof TRow | string;
   width?: string | number;
   align?: 'left' | 'center' | 'right';
+  sortable?: boolean;
   render?: (row: TRow, index: number) => VNodeChild;
 };
 
-export type ProRowAction<TRow> = {
+type ProActionButtonAppearance = {
+  icon?: ProActionIcon;
+  type?: ButtonType;
+  danger?: boolean;
+};
+
+export type ProRowAction<TRow> = ProActionButtonAppearance & {
   key: string;
   label: string;
   onClick: (row: TRow, index: number) => void | Promise<void>;
@@ -140,7 +191,7 @@ export type ProRowAction<TRow> = {
   refreshOnSuccess?: boolean;
 };
 
-export type ProToolbarAction = {
+export type ProToolbarAction = ProActionButtonAppearance & {
   key: string;
   label: string;
   visible?: boolean;
@@ -149,4 +200,25 @@ export type ProToolbarAction = {
   onClick: () => void | Promise<void>;
 };
 
+export type ProBulkActionContext<TRow> = {
+  selectedRowKeys: Array<string | number>;
+  selectedRows: TRow[];
+  clearSelection: () => void;
+  refresh: () => Promise<void>;
+  sortState?: TableSortState;
+};
+
+export type ProBulkAction<TRow> = ProActionButtonAppearance & {
+  key: string;
+  label: string;
+  visible?: (context: ProBulkActionContext<TRow>) => boolean;
+  disabled?: (context: ProBulkActionContext<TRow>) => boolean;
+  loading?: (context: ProBulkActionContext<TRow>) => boolean;
+  refreshOnSuccess?: boolean;
+  clearSelectionOnSuccess?: boolean;
+  onClick: (context: ProBulkActionContext<TRow>) => void | Promise<void>;
+};
+
 export type ProRowKey<TRow extends Record<string, unknown> = Record<string, unknown>> = TableRowKey<TRow>;
+export type ProRowSelection<TRow extends Record<string, unknown> = Record<string, unknown>> =
+  TableRowSelection<TRow>;

@@ -1,4 +1,12 @@
-import { computed, defineComponent, h, ref, watch, type PropType } from 'vue';
+import {
+  computed,
+  defineComponent,
+  getCurrentInstance,
+  h,
+  ref,
+  watch,
+  type PropType
+} from 'vue';
 import { useLolitaConfig, type ComponentSize } from '../config/context';
 import { classNames } from '../utils/classNames';
 import type { InputStatus } from './Input';
@@ -109,7 +117,10 @@ export const LCascader = defineComponent({
   },
   setup(props, { attrs, emit }) {
     const config = useLolitaConfig();
-    const isControlled = computed(() => props.value !== undefined);
+    const instance = getCurrentInstance();
+    const isControlled = computed(() =>
+      Object.prototype.hasOwnProperty.call(instance?.vnode.props ?? {}, 'value')
+    );
     const internalValue = ref<string[]>(props.defaultValue);
     const open = ref(false);
     const hasFocusWithin = ref(false);

@@ -1,4 +1,4 @@
-import { computed, defineComponent, h, ref, type PropType } from 'vue';
+import { computed, defineComponent, getCurrentInstance, h, ref, type PropType } from 'vue';
 import { useLolitaConfig, type ComponentSize } from '../config/context';
 import { classNames } from '../utils/classNames';
 
@@ -45,7 +45,10 @@ export const LInput = defineComponent({
   },
   setup(props, { attrs, emit }) {
     const config = useLolitaConfig();
-    const isControlled = computed(() => props.value !== undefined);
+    const instance = getCurrentInstance();
+    const isControlled = computed(() =>
+      Object.prototype.hasOwnProperty.call(instance?.vnode.props ?? {}, 'value')
+    );
     const internalValue = ref(String(props.defaultValue ?? ''));
     const mergedSize = computed<ComponentSize>(() => props.size ?? config.value.componentSize);
     const prefixedInputClass = computed(() => `${config.value.prefixCls}-input`);

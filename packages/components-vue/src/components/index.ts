@@ -9,6 +9,7 @@ export * from './Form';
 export * from './FormItem';
 export * from './Input';
 export * from './DatePicker';
+export * from './DateRangePicker';
 export * from './Upload';
 export * from './Tree';
 export * from './Cascader';

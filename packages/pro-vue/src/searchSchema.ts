@@ -9,6 +9,11 @@ import type {
 const isCascaderValue = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((item) => typeof item === 'string');
 
+const isDateRangeValue = (value: unknown): value is [string, string] =>
+  Array.isArray(value) &&
+  value.length === 2 &&
+  value.every((item) => typeof item === 'string');
+
 const resolveDefaultValue = (field: SearchFieldSchema): unknown => {
   if (field.defaultValue !== undefined) {
     return field.defaultValue;
@@ -59,6 +64,11 @@ export const serializeQueryValues = (
       } else if (field.type === 'date') {
         contribution = field.toQuery(
           typeof rawValue === 'string' ? rawValue : undefined,
+          formValues
+        );
+      } else if (field.type === 'dateRange') {
+        contribution = field.toQuery(
+          isDateRangeValue(rawValue) ? rawValue : undefined,
           formValues
         );
       } else {

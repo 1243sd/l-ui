@@ -12,8 +12,16 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: /^@lolita-ui\/components-vue\/style\.css$/,
+        replacement: toFsPath('../../packages/components-vue/src/style.css')
+      },
+      {
         find: /^@lolita-ui\/components-vue$/,
         replacement: toFsPath('../../packages/components-vue/src/index.ts')
+      },
+      {
+        find: /^@lolita-ui\/pro-vue\/style\.css$/,
+        replacement: toFsPath('../../packages/pro-vue/src/style.css')
       },
       {
         find: /^@lolita-ui\/pro-vue$/,

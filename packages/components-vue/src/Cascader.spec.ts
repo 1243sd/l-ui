@@ -69,6 +69,22 @@ describe('LCascader', () => {
     expect(wrapper.find('.l-cascader__value').text()).toBe('Zhejiang / Hangzhou / West Lake');
   });
 
+  it('stays controlled when the parent clears the path to undefined', async () => {
+    const wrapper = mount(LCascader, {
+      props: {
+        options,
+        value: ['jiangsu', 'nanjing', 'qinhuai'],
+        allowClear: true
+      }
+    });
+
+    await wrapper.find('.l-cascader__clear').trigger('click');
+    expect(wrapper.emitted('update:value')?.at(-1)?.[0]).toBeUndefined();
+
+    await wrapper.setProps({ value: undefined });
+    expect(wrapper.find('.l-cascader__value').text()).toBe('Select option');
+  });
+
   it('supports allowClear, disabled state, and size inheritance', async () => {
     const Root = defineComponent({
       components: { LConfigProvider, LCascader },

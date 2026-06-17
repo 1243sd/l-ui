@@ -98,6 +98,22 @@ describe('LSelect', () => {
     expect(wrapper.find('.l-select__clear').exists()).toBe(false);
   });
 
+  it('stays controlled when the parent clears a single-select value to undefined', async () => {
+    const wrapper = mount(LSelect, {
+      props: {
+        options,
+        value: 'cherry',
+        allowClear: true
+      }
+    });
+
+    await wrapper.find('.l-select__clear').trigger('click');
+    expect(wrapper.emitted('update:value')?.at(-1)?.[0]).toBeUndefined();
+
+    await wrapper.setProps({ value: undefined });
+    expect(wrapper.find('.l-select__value').classes()).toContain('l-select__value--placeholder');
+  });
+
   it('supports local search filtering when showSearch is enabled', async () => {
     const wrapper = mount(LSelect, {
       props: {

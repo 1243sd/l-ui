@@ -9,6 +9,7 @@ import { LForm } from './components/Form';
 import { LFormItem } from './components/FormItem';
 import { LInput } from './components/Input';
 import { LDatePicker } from './components/DatePicker';
+import { LDateRangePicker } from './components/DateRangePicker';
 import { LUpload } from './components/Upload';
 import { LTree } from './components/Tree';
 import { LCascader } from './components/Cascader';
@@ -43,6 +44,7 @@ const components = [
   LCheckbox,
   LInput,
   LDatePicker,
+  LDateRangePicker,
   LUpload,
   LTree,
   LCascader,

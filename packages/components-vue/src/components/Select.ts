@@ -1,4 +1,13 @@
-import { computed, defineComponent, h, nextTick, ref, watch, type PropType } from 'vue';
+import {
+  computed,
+  defineComponent,
+  getCurrentInstance,
+  h,
+  nextTick,
+  ref,
+  watch,
+  type PropType
+} from 'vue';
 import { useLolitaConfig, type ComponentSize } from '../config/context';
 import { classNames } from '../utils/classNames';
 import type { InputStatus } from './Input';
@@ -175,8 +184,13 @@ export const LSelect = defineComponent({
   },
   setup(props, { attrs, emit }) {
     const config = useLolitaConfig();
-    const isControlled = computed(() => props.value !== undefined);
-    const isSearchControlled = computed(() => props.searchValue !== undefined);
+    const instance = getCurrentInstance();
+    const isControlled = computed(() =>
+      Object.prototype.hasOwnProperty.call(instance?.vnode.props ?? {}, 'value')
+    );
+    const isSearchControlled = computed(() =>
+      Object.prototype.hasOwnProperty.call(instance?.vnode.props ?? {}, 'searchValue')
+    );
     const isMultiple = computed(() => props.mode === 'multiple');
     const internalValue = ref<SelectModelValue>(props.defaultValue);
     const internalSearchValue = ref(props.defaultSearchValue);

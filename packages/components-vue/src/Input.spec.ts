@@ -50,6 +50,17 @@ describe('LInput', () => {
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('');
   });
 
+  it('stays controlled when the parent clears the value to undefined', async () => {
+    const wrapper = mount(LInput, {
+      props: {
+        value: 'cute'
+      }
+    });
+
+    await wrapper.setProps({ value: undefined });
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('');
+  });
+
   it('applies disabled and status classes', async () => {
     const wrapper = mount(LInput, {
       props: {

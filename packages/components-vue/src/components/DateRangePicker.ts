@@ -17,6 +17,9 @@ dayjs.extend(customParseFormat);
 
 const DEFAULT_FORMAT = 'YYYY-MM-DD';
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
+const DEFAULT_PLACEHOLDER = 'Select date range';
+
+type DateRangeValue = [string, string] | undefined;
 
 type CalendarCell = {
   key: string;
@@ -24,10 +27,13 @@ type CalendarCell = {
   label: string;
   inCurrentMonth: boolean;
   isSelected: boolean;
+  isInRange: boolean;
+  isSoftSelected: boolean;
+  isSoftInRange: boolean;
   isToday: boolean;
 };
 
-const parseValue = (value: string | undefined, format: string): Dayjs | undefined => {
+const parseDate = (value: string | undefined, format: string): Dayjs | undefined => {
   if (!value) {
     return undefined;
   }
@@ -41,38 +47,76 @@ const parseValue = (value: string | undefined, format: string): Dayjs | undefine
   return fallback.isValid() ? fallback : undefined;
 };
 
-const buildCalendarCells = (viewMonth: Dayjs, selectedDate: Dayjs | undefined): CalendarCell[] => {
+const normalizeRange = (
+  first: Dayjs,
+  second: Dayjs
+): [Dayjs, Dayjs] => (first.isAfter(second, 'day') ? [second, first] : [first, second]);
+
+const buildCalendarCells = (
+  viewMonth: Dayjs,
+  startDate: Dayjs | undefined,
+  endDate: Dayjs | undefined,
+  draftStartDate: Dayjs | undefined
+): CalendarCell[] => {
   const monthStart = viewMonth.startOf('month');
   const gridStart = monthStart.subtract(monthStart.day(), 'day');
 
   return Array.from({ length: 42 }, (_, index) => {
     const cellDate = gridStart.add(index, 'day');
+    const activeStartDate = draftStartDate ?? startDate;
+    const activeEndDate = draftStartDate ? undefined : endDate;
+    const isRangeReady = activeStartDate && activeEndDate;
+    const isInRange = Boolean(
+      isRangeReady &&
+        (cellDate.isSame(activeStartDate, 'day') ||
+          cellDate.isSame(activeEndDate, 'day') ||
+          (cellDate.isAfter(activeStartDate!, 'day') &&
+            cellDate.isBefore(activeEndDate!, 'day')))
+    );
+    const isSoftRangeReady = draftStartDate && startDate && endDate;
+    const isSoftInRange = Boolean(
+      isSoftRangeReady &&
+        (cellDate.isSame(startDate, 'day') ||
+          cellDate.isSame(endDate, 'day') ||
+          (cellDate.isAfter(startDate!, 'day') && cellDate.isBefore(endDate!, 'day')))
+    );
+
     return {
       key: cellDate.format(DEFAULT_FORMAT),
       date: cellDate,
       label: cellDate.format('D'),
       inCurrentMonth: cellDate.month() === viewMonth.month(),
-      isSelected: selectedDate ? cellDate.isSame(selectedDate, 'day') : false,
+      isSelected: Boolean(
+        (activeStartDate && cellDate.isSame(activeStartDate, 'day')) ||
+          (activeEndDate && cellDate.isSame(activeEndDate, 'day'))
+      ),
+      isInRange,
+      isSoftSelected: Boolean(
+        draftStartDate &&
+          ((startDate && cellDate.isSame(startDate, 'day')) ||
+            (endDate && cellDate.isSame(endDate, 'day')))
+      ),
+      isSoftInRange,
       isToday: cellDate.isSame(dayjs(), 'day')
     };
   });
 };
 
-export const LDatePicker = defineComponent({
-  name: 'LDatePicker',
+export const LDateRangePicker = defineComponent({
+  name: 'LDateRangePicker',
   inheritAttrs: false,
   props: {
     value: {
-      type: String as PropType<string | undefined>,
+      type: Array as unknown as PropType<[string, string] | undefined>,
       default: undefined
     },
     defaultValue: {
-      type: String as PropType<string | undefined>,
+      type: Array as unknown as PropType<[string, string] | undefined>,
       default: undefined
     },
     placeholder: {
-      type: String,
-      default: 'Select date'
+      type: Array as unknown as PropType<[string, string] | undefined>,
+      default: undefined
     },
     disabled: {
       type: Boolean,
@@ -96,9 +140,16 @@ export const LDatePicker = defineComponent({
     }
   },
   emits: {
-    'update:value': (value: string | undefined) =>
-      value === undefined || typeof value === 'string',
-    change: (value: string | undefined) => value === undefined || typeof value === 'string',
+    'update:value': (value: DateRangeValue) =>
+      value === undefined ||
+      (Array.isArray(value) &&
+        value.length === 2 &&
+        value.every((item) => typeof item === 'string')),
+    change: (value: DateRangeValue) =>
+      value === undefined ||
+      (Array.isArray(value) &&
+        value.length === 2 &&
+        value.every((item) => typeof item === 'string')),
     openChange: (open: boolean) => typeof open === 'boolean',
     focus: (event: FocusEvent) => event instanceof FocusEvent,
     blur: (event: FocusEvent) => event instanceof FocusEvent
@@ -109,45 +160,66 @@ export const LDatePicker = defineComponent({
     const isControlled = computed(() =>
       Object.prototype.hasOwnProperty.call(instance?.vnode.props ?? {}, 'value')
     );
-    const internalValue = ref<string | undefined>(props.defaultValue);
+    const internalValue = ref<DateRangeValue>(props.defaultValue);
     const open = ref(false);
     const hasFocusWithin = ref(false);
     const wrapperRef = ref<HTMLElement | null>(null);
+    const draftStart = ref<Dayjs | undefined>(undefined);
 
-    const mergedValue = computed(() =>
+    const mergedValue = computed<DateRangeValue>(() =>
       isControlled.value ? props.value : internalValue.value
     );
     const mergedSize = computed<ComponentSize>(() => props.size ?? config.value.componentSize);
-    const selectedDate = computed(() => parseValue(mergedValue.value, props.format));
-    const viewMonth = ref((selectedDate.value ?? dayjs()).startOf('month'));
+    const selectedStart = computed(() =>
+      parseDate(mergedValue.value?.[0], props.format)
+    );
+    const selectedEnd = computed(() =>
+      parseDate(mergedValue.value?.[1], props.format)
+    );
+    const viewMonth = ref((selectedStart.value ?? dayjs()).startOf('month'));
 
     watch(
-      selectedDate,
-      (nextDate) => {
-        if (nextDate) {
-          viewMonth.value = nextDate.startOf('month');
+      [selectedStart, selectedEnd],
+      ([nextStart]) => {
+        if (nextStart) {
+          viewMonth.value = nextStart.startOf('month');
         }
       },
       { immediate: true }
     );
 
-    const showClear = computed(() => props.allowClear && !props.disabled && !!mergedValue.value);
+    const showClear = computed(
+      () =>
+        props.allowClear &&
+        !props.disabled &&
+        !!mergedValue.value?.[0] &&
+        !!mergedValue.value?.[1]
+    );
     const wrapperClassName = computed(() =>
       classNames(
-        'l-date-picker-wrapper',
-        `l-date-picker-wrapper--${mergedSize.value}`,
-        props.status !== 'default' && `l-date-picker-wrapper--${props.status}`,
-        props.disabled && 'l-date-picker-wrapper--disabled',
-        showClear.value && 'l-date-picker-wrapper--clearable',
-        open.value && 'l-date-picker-wrapper--open'
+        'l-date-range-picker-wrapper',
+        `l-date-range-picker-wrapper--${mergedSize.value}`,
+        props.status !== 'default' && `l-date-range-picker-wrapper--${props.status}`,
+        props.disabled && 'l-date-range-picker-wrapper--disabled',
+        showClear.value && 'l-date-range-picker-wrapper--clearable',
+        open.value && 'l-date-range-picker-wrapper--open'
       )
     );
-    const triggerClassName = computed(() => classNames('l-date-picker'));
-    const displayValue = computed(() =>
-      selectedDate.value ? selectedDate.value.format(props.format) : props.placeholder
-    );
+    const triggerClassName = computed(() => classNames('l-date-range-picker'));
+    const displayValue = computed(() => {
+      if (selectedStart.value && selectedEnd.value) {
+        return `${selectedStart.value.format(props.format)} ~ ${selectedEnd.value.format(props.format)}`;
+      }
+
+      return props.placeholder?.join(' ~ ') ?? DEFAULT_PLACEHOLDER;
+    });
     const calendarCells = computed(() =>
-      buildCalendarCells(viewMonth.value, selectedDate.value)
+      buildCalendarCells(
+        viewMonth.value,
+        selectedStart.value,
+        selectedEnd.value,
+        draftStart.value
+      )
     );
     const monthLabel = computed(() => viewMonth.value.format('YYYY-MM'));
 
@@ -157,10 +229,13 @@ export const LDatePicker = defineComponent({
       }
 
       open.value = nextOpen;
+      if (nextOpen) {
+        draftStart.value = undefined;
+      }
       emit('openChange', nextOpen);
     };
 
-    const updateValue = (nextValue: string | undefined): void => {
+    const updateValue = (nextValue: DateRangeValue): void => {
       if (!isControlled.value) {
         internalValue.value = nextValue;
       }
@@ -169,20 +244,21 @@ export const LDatePicker = defineComponent({
       emit('change', nextValue);
     };
 
+    const closeDropdown = (): void => {
+      draftStart.value = undefined;
+      setOpen(false);
+    };
+
     const toggleOpen = (): void => {
       if (props.disabled) {
         return;
       }
 
-      if (!open.value && selectedDate.value) {
-        viewMonth.value = selectedDate.value.startOf('month');
+      if (!open.value && selectedStart.value) {
+        viewMonth.value = selectedStart.value.startOf('month');
       }
 
       setOpen(!open.value);
-    };
-
-    const closeDropdown = (): void => {
-      setOpen(false);
     };
 
     const onTriggerKeydown = (event: KeyboardEvent): void => {
@@ -192,8 +268,8 @@ export const LDatePicker = defineComponent({
 
       if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
         event.preventDefault();
-        if (!open.value && selectedDate.value) {
-          viewMonth.value = selectedDate.value.startOf('month');
+        if (!open.value && selectedStart.value) {
+          viewMonth.value = selectedStart.value.startOf('month');
         }
         setOpen(true);
         return;
@@ -236,19 +312,26 @@ export const LDatePicker = defineComponent({
     };
 
     const onSelectDate = (date: Dayjs): void => {
-      updateValue(date.format(props.format));
-      viewMonth.value = date.startOf('month');
+      if (!draftStart.value) {
+        draftStart.value = date;
+        return;
+      }
+
+      const [start, end] = normalizeRange(draftStart.value, date);
+      draftStart.value = undefined;
+      updateValue([start.format(props.format), end.format(props.format)]);
+      viewMonth.value = start.startOf('month');
       closeDropdown();
     };
 
     const renderDropdown = () =>
-      h('div', { class: 'l-date-picker-dropdown' }, [
-        h('div', { class: 'l-date-picker-dropdown__header' }, [
+      h('div', { class: 'l-date-range-picker-dropdown' }, [
+        h('div', { class: 'l-date-range-picker-dropdown__header' }, [
           h(
             'button',
             {
               type: 'button',
-              class: 'l-date-picker-dropdown__nav',
+              class: 'l-date-range-picker-dropdown__nav',
               'aria-label': 'Previous month',
               onClick: () => {
                 viewMonth.value = viewMonth.value.subtract(1, 'month');
@@ -256,12 +339,12 @@ export const LDatePicker = defineComponent({
             },
             '‹'
           ),
-          h('div', { class: 'l-date-picker-dropdown__title' }, monthLabel.value),
+          h('div', { class: 'l-date-range-picker-dropdown__title' }, monthLabel.value),
           h(
             'button',
             {
               type: 'button',
-              class: 'l-date-picker-dropdown__nav',
+              class: 'l-date-range-picker-dropdown__nav',
               'aria-label': 'Next month',
               onClick: () => {
                 viewMonth.value = viewMonth.value.add(1, 'month');
@@ -273,16 +356,16 @@ export const LDatePicker = defineComponent({
         h(
           'div',
           {
-            class: 'l-date-picker-dropdown__weekdays'
+            class: 'l-date-range-picker-dropdown__weekdays'
           },
           WEEKDAY_LABELS.map((label) =>
-            h('span', { key: label, class: 'l-date-picker-dropdown__weekday' }, label)
+            h('span', { key: label, class: 'l-date-range-picker-dropdown__weekday' }, label)
           )
         ),
         h(
           'div',
           {
-            class: 'l-date-picker-dropdown__grid'
+            class: 'l-date-range-picker-dropdown__grid'
           },
           calendarCells.value.map((cell) =>
             h(
@@ -291,10 +374,13 @@ export const LDatePicker = defineComponent({
                 key: cell.key,
                 type: 'button',
                 class: classNames(
-                  'l-date-picker-dropdown__cell',
-                  !cell.inCurrentMonth && 'l-date-picker-dropdown__cell--muted',
-                  cell.isSelected && 'l-date-picker-dropdown__cell--selected',
-                  cell.isToday && 'l-date-picker-dropdown__cell--today'
+                  'l-date-range-picker-dropdown__cell',
+                  !cell.inCurrentMonth && 'l-date-range-picker-dropdown__cell--muted',
+                  cell.isToday && 'l-date-range-picker-dropdown__cell--today',
+                  cell.isSoftInRange && 'l-date-range-picker-dropdown__cell--soft-in-range',
+                  cell.isSoftSelected && 'l-date-range-picker-dropdown__cell--soft-selected',
+                  cell.isInRange && 'l-date-range-picker-dropdown__cell--in-range',
+                  cell.isSelected && 'l-date-range-picker-dropdown__cell--selected'
                 ),
                 'data-date': cell.date.format(DEFAULT_FORMAT),
                 onClick: () => onSelectDate(cell.date)
@@ -336,14 +422,15 @@ export const LDatePicker = defineComponent({
                 'span',
                 {
                   class: classNames(
-                    'l-date-picker__value',
-                    !selectedDate.value && 'l-date-picker__value--placeholder'
+                    'l-date-range-picker__value',
+                    !(selectedStart.value && selectedEnd.value) &&
+                      'l-date-range-picker__value--placeholder'
                   )
                 },
                 displayValue.value
               ),
-              h('span', { class: 'l-date-picker__indicator', 'aria-hidden': 'true' }, [
-                h('span', { class: 'l-date-picker__icon' })
+              h('span', { class: 'l-date-range-picker__indicator', 'aria-hidden': 'true' }, [
+                h('span', { class: 'l-date-range-picker__icon' })
               ])
             ]
           ),
@@ -352,9 +439,9 @@ export const LDatePicker = defineComponent({
                 'button',
                 {
                   type: 'button',
-                  class: ['l-date-picker__clear', 'l-field-affix-action'],
+                  class: ['l-date-range-picker__clear', 'l-field-affix-action'],
                   tabIndex: -1,
-                  'aria-label': 'Clear date',
+                  'aria-label': 'Clear date range',
                   onClick: onClearClick
                 },
                 '×'
@@ -367,4 +454,4 @@ export const LDatePicker = defineComponent({
   }
 });
 
-export const DatePicker = LDatePicker;
+export const DateRangePicker = LDateRangePicker;

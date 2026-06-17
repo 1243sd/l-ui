@@ -20,6 +20,12 @@ describe('searchSchema helpers', () => {
         defaultValue: '2026-05-26'
       },
       {
+        name: 'window',
+        label: 'Window',
+        type: 'dateRange',
+        defaultValue: ['2026-06-01', '2026-06-08']
+      },
+      {
         name: 'region',
         label: 'Region',
         type: 'cascader',
@@ -38,6 +44,7 @@ describe('searchSchema helpers', () => {
       keyword: 'violet',
       status: true,
       releasedAt: '2026-05-26',
+      window: ['2026-06-01', '2026-06-08'],
       region: ['zhejiang', 'hangzhou']
     });
   });
@@ -79,6 +86,11 @@ describe('searchSchema helpers', () => {
     const schema: SearchFieldSchema[] = [
       { name: 'keyword', label: 'Keyword', type: 'text' },
       {
+        name: 'window',
+        label: 'Window',
+        type: 'dateRange'
+      },
+      {
         name: 'region',
         label: 'Region',
         type: 'cascader',
@@ -89,13 +101,41 @@ describe('searchSchema helpers', () => {
     expect(
       serializeQueryValues(schema, {
         keyword: 'mousse',
+        window: ['2026-06-10', '2026-06-18'],
         region: ['zhejiang']
       })
     ).toEqual({
       blocked: false,
       queryValues: {
         keyword: 'mousse',
+        window: ['2026-06-10', '2026-06-18'],
         region: ['zhejiang']
+      }
+    });
+  });
+
+  it('passes typed dateRange values to toQuery hooks', () => {
+    const schema: SearchFieldSchema[] = [
+      {
+        name: 'window',
+        label: 'Window',
+        type: 'dateRange',
+        toQuery: (value) => ({
+          startAt: value?.[0],
+          endAt: value?.[1]
+        })
+      }
+    ];
+
+    expect(
+      serializeQueryValues(schema, {
+        window: ['2026-06-10', '2026-06-18']
+      })
+    ).toEqual({
+      blocked: false,
+      queryValues: {
+        startAt: '2026-06-10',
+        endAt: '2026-06-18'
       }
     });
   });

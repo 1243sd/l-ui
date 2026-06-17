@@ -110,4 +110,85 @@ describe('LTable', () => {
     expect(wrapper.text()).not.toContain('小满');
     expect(wrapper.find('[aria-current="page"]').text()).toBe('2');
   });
+
+  it('cycles sortable headers through ascend, descend, and cleared states', async () => {
+    const wrapper = mount(LTable as any, {
+      props: {
+        columns: [
+          { key: 'name', title: '姓名', dataIndex: 'name', sortable: true },
+          { key: 'role', title: '角色', dataIndex: 'role' }
+        ],
+        dataSource,
+        rowKey: 'id'
+      }
+    });
+
+    await wrapper.find('[data-column-key="name"]').trigger('click');
+    expect(wrapper.emitted('update:sortState')?.at(-1)?.[0]).toEqual({
+      columnKey: 'name',
+      order: 'ascend'
+    });
+
+    await wrapper.find('[data-column-key="name"]').trigger('click');
+    expect(wrapper.emitted('update:sortState')?.at(-1)?.[0]).toEqual({
+      columnKey: 'name',
+      order: 'descend'
+    });
+
+    await wrapper.find('[data-column-key="name"]').trigger('click');
+    expect(wrapper.emitted('update:sortState')?.at(-1)?.[0]).toBeUndefined();
+  });
+
+  it('supports current-page row selection and skips disabled rows on select-all', async () => {
+    const wrapper = mount(LTable as any, {
+      props: {
+        columns,
+        dataSource,
+        rowKey: 'id',
+        pagination: {
+          pageSize: 2,
+          total: 3,
+          defaultCurrent: 1
+        },
+        rowSelection: {
+          getDisabled: (record: Record<string, unknown>) => record.id === 'u-2'
+        }
+      }
+    });
+
+    await wrapper.find('[data-testid="l-table-select-all"]').setValue(true);
+
+    expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual(['u-1']);
+    expect(wrapper.emitted('selectionChange')?.at(-1)?.[0]).toEqual(['u-1']);
+
+    await wrapper.find('.l-pagination__nav--next').trigger('click');
+    expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual([]);
+
+    await wrapper.find('[data-testid="l-table-row-select-u-3"]').setValue(true);
+    expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual(['u-3']);
+  });
+
+  it('preserves selected row keys across pagination when configured', async () => {
+    const wrapper = mount(LTable as any, {
+      props: {
+        columns,
+        dataSource,
+        rowKey: 'id',
+        pagination: {
+          pageSize: 2,
+          total: 3,
+          defaultCurrent: 1
+        },
+        rowSelection: {
+          preserveSelectedRowKeys: true
+        }
+      }
+    });
+
+    await wrapper.find('[data-testid="l-table-row-select-u-1"]').setValue(true);
+    expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual(['u-1']);
+
+    await wrapper.find('.l-pagination__nav--next').trigger('click');
+    expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual(['u-1']);
+  });
 });

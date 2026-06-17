@@ -47,6 +47,21 @@ describe('LDatePicker', () => {
     expect(wrapper.find('.l-date-picker__value').text()).toBe('2026-05-12');
   });
 
+  it('stays controlled when the parent clears the value to undefined', async () => {
+    const wrapper = mount(LDatePicker, {
+      props: {
+        value: '2026-05-10',
+        allowClear: true
+      }
+    });
+
+    await wrapper.find('.l-date-picker__clear').trigger('click');
+    expect(wrapper.emitted('update:value')?.at(-1)?.[0]).toBeUndefined();
+
+    await wrapper.setProps({ value: undefined });
+    expect(wrapper.find('.l-date-picker__value').text()).toBe('Select date');
+  });
+
   it('supports allowClear and custom format', async () => {
     const wrapper = mount(LDatePicker, {
       props: {
@@ -57,6 +72,7 @@ describe('LDatePicker', () => {
     });
 
     expect(wrapper.classes()).toContain('l-date-picker-wrapper--clearable');
+    expect(wrapper.find('.l-date-picker__indicator').exists()).toBe(true);
     expect(wrapper.find('.l-date-picker__clear').exists()).toBe(true);
     expect(wrapper.find('.l-date-picker__value').text()).toBe('2026/05/08');
 
