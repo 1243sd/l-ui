@@ -119,7 +119,7 @@
 | M3 | M4 | `docs/implementation/stage-plans/M4-complex-data-feedback.md` | 已生成（详细执行版） | 2026-05-20 |
 | M4 | M5 | `docs/implementation/stage-plans/M5-pro-release-hardening.md` | 已完成（执行 + 收口） | 2026-05-26 |
 | M5 | M6 | `docs/implementation/stage-plans/M6-release-delivery-and-consumer-readiness.md` | 已完成（执行 + 收口） | 2026-06-08 |
-| M6 | M7 | `docs/implementation/stage-plans/M7-advanced-pro-data-workflows.md` | 已生成（详细执行版） | 2026-06-08 |
+| M6 | M7 | `docs/implementation/stage-plans/M7-advanced-pro-data-workflows.md` | 已完成（执行 + 收口） | 2026-06-17 |
 | M7 | M8 | `docs/implementation/stage-plans/M8-pro-preferences-and-persistence.md` | 待生成 | - |
 
 ## 追加记录
@@ -252,8 +252,8 @@
 - 测试结论：fresh `rtk pnpm release:dry-run` 全绿；其中串起并通过 `build / docs:build / pack:check / consumer:build / test:consumer / size:check / changeset:status`。
 - 证据链接：`apps/consumer-smoke/*`、`scripts/release/pack-check.mjs`、`scripts/release/consumer-install.mjs`、`scripts/release/size-budget-check.mjs`、`scripts/release/release-dry-run.mjs`、`playwright.consumer.config.ts`、`tests/playwright/consumer.spec.ts`、`docs/release/first-release-checklist.md`、`docs/release/consumer-installation.md`、`docs/release/size-budgets.json`。
 - 兼容备注：M6 首发消费面明确只锁 `Vite + Vue 3 + ESM` 主链路；真实 registry publish、最终 license 决策与凭据校验仍保留人工动作，不在本阶段自动执行。
-- 下一阶段：M7 高级 Pro 数据工作流。
-- 下一阶段计划文件：`docs/implementation/stage-plans/M7-advanced-pro-data-workflows.md`。
+- 下一阶段：M8 Pro 偏好与持久化。
+- 下一阶段计划文件：`docs/implementation/stage-plans/M8-pro-preferences-and-persistence.md`。
 
 ### [2026-06-08] M7 - 计划生成
 - 指派范围：本地主线基于已完成的 M5 Pro 合同与 M6 交付面，生成下一阶段的详细执行版计划。
@@ -261,3 +261,24 @@
 - 计划文件：`docs/implementation/stage-plans/M7-advanced-pro-data-workflows.md`
 - 路线同步：`docs/implementation/lolita-ui-plan.md`、`docs/implementation/plan.md`、本文件“下一阶段开发规划”已同步指向 M7。
 - 明确延后：inline edit、column pinning、preset persistence、remote schema builders、多列排序、列级 filters。
+### [2026-06-17] M7 - 收尾完成
+- Scope: `LDateRangePicker`, `LTable` sorting/selection primitives, `ProSearchTable` dateRange/sortState/rowSelection/bulkActions, docs truth sources, and browser gates.
+- Completion:
+  - Fixed the `ProSearchTable` template build regression and restored `pro-vue` declaration output.
+  - Closed the `pro-basic` a11y gap by naming row-selection controls and raising badge contrast.
+  - Synced `table`, `date-range-picker`, `pro-search-table`, compatibility notes, parity manifest, docs index, and progress memory to M7 behavior.
+  - Added a truth-source regression test so outdated docs/parity content now fails `pnpm test`.
+- Next:
+  - Reserve M8 for Pro preferences and persistence after M7 remains green.
+
+### [2026-06-18] Post-M7 - List Pack Page Proof
+- Scope: `ValueEnum`, `StatusTag`, `ProQueryFilter`, `ProBatchActionBar`, `ProSearchTable`, `apps/playground`, and matching truth sources.
+- Completion:
+  - Exported the four List Pack APIs from `@lolita-ui/pro-vue` and kept `ProSearchTable` reusing `ProQueryFilter` plus `ProBatchActionBar` internally.
+  - Upgraded the `pro-basic` playground scenario so the real CRUD list now shows shared status semantics through `StatusTag` + `ValueEnum`, while keeping query, selection, and bulk-action flows on the same page.
+  - Moved parity and roadmap truth sources from “List Pack is next” to “List Pack is completed and Detail Pack is next”.
+  - Refreshed `pro-basic` visual baselines after verifying the diff came from the intentional list-pack showcase change rather than an unintended regression.
+  - Deduplicated repeated pro icon/runtime helpers inside `pro-vue`, then refreshed `docs/release/size-budgets.json` so the release size gate now matches the intentionally expanded List Pack public surface instead of the pre-List-Pack baseline.
+- Test conclusion: `test`, `vue-tsc -p packages/pro-vue/tsconfig.build.json --noEmit`, `build`, `docs:build`, `test:e2e`, `test:a11y`, and `test:visual` all passed on the updated showcase.
+- Next:
+  - Start Detail Pack from the now-stabilized list-page vocabulary instead of reopening list-page glue work.

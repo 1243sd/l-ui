@@ -114,8 +114,9 @@
   height: 22px;
   padding: 0 7px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--l-color-primary) 14%, var(--l-color-surface) 86%);
-  color: var(--l-color-primary);
+  border: 1px solid color-mix(in srgb, var(--l-color-primary) 22%, var(--l-color-border) 78%);
+  background: color-mix(in srgb, var(--l-color-primary) 20%, var(--l-color-surface) 80%);
+  color: color-mix(in srgb, var(--l-color-primary) 52%, var(--l-color-textPrimary) 48%);
   font-size: 12px;
   font-weight: 700;
 }

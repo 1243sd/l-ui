@@ -21,6 +21,9 @@ test.describe('playground QA shell', () => {
     const proSection = page.getByTestId('qa-pro-basic');
 
     await expect(proSection.getByText('Alice')).toBeVisible();
+    await expect(
+      proSection.locator('[data-testid="pro-status-tag"][data-status-value="active"]').first()
+    ).toBeVisible();
 
     await proSection.locator('.l-date-range-picker').click();
     await page.getByRole('button', { name: 'Previous month' }).click();
@@ -35,6 +38,18 @@ test.describe('playground QA shell', () => {
     await proSection.locator('[data-column-key="name"]').click();
     await expect(proSection.getByText('Gina')).toBeVisible();
     await expect(proSection.getByText('Derek')).toBeVisible();
+
+    await page.getByTestId('pro-search-reset').click();
+    await expect(proSection.getByText('Alice')).toBeVisible();
+
+    await proSection.getByTestId('pro-search-toggle').click();
+    await proSection.locator('.l-select').nth(1).click();
+    await page.getByRole('button', { name: '待审批' }).click();
+    await page.getByTestId('pro-search-submit').click();
+
+    await expect(proSection.getByText('Bianca')).toBeVisible();
+    await expect(proSection.getByText('Elena')).toBeVisible();
+    await expect(proSection.getByText('Alice')).toHaveCount(0);
 
     await page.getByTestId('pro-search-reset').click();
     await expect(proSection.getByText('Alice')).toBeVisible();

@@ -1,18 +1,25 @@
 # Table
 
-`LTable` 是 M3 的基础数据表格，当前只覆盖 `columns / dataSource / rowKey / loading / empty / pagination` 这条主链路，不提前混入排序、筛选和选择态复杂度。
+`LTable` is the M7 data-workflow baseline table. It now supports the M3 display surface plus the minimum workflow primitives needed by `ProSearchTable`: single-column sorting and checkbox row selection.
 
-## 示例
+## Example
+
 ```vue
 <script setup lang="ts">
+import { ref } from 'vue';
+import type { TableSortState } from '@lolita-ui/components-vue';
+
+const sortState = ref<TableSortState | undefined>(undefined);
+const selectedRowKeys = ref<Array<string | number>>([]);
+
 const columns = [
-  { key: 'name', title: '成员', dataIndex: 'name' },
-  { key: 'role', title: '角色', dataIndex: 'role', align: 'center' },
-  { key: 'city', title: '城市', dataIndex: 'city', align: 'right' }
+  { key: 'name', title: 'Member', dataIndex: 'name', sortable: true },
+  { key: 'role', title: 'Role', dataIndex: 'role' }
 ];
 
 const dataSource = [
-  { id: 1, name: '成员 1', role: '设计师', city: '上海' }
+  { id: 'u-1', name: 'Alice', role: 'Designer' },
+  { id: 'u-2', name: 'Derek', role: 'Engineer' }
 ];
 </script>
 
@@ -21,56 +28,54 @@ const dataSource = [
     :columns="columns"
     :data-source="dataSource"
     row-key="id"
-    :pagination="{ defaultCurrent: 1, pageSize: 5, total: dataSource.length }"
+    :sort-state="sortState"
+    :row-selection="{ selectedRowKeys }"
+    :pagination="{ current: 1, pageSize: 10, total: dataSource.length }"
+    @update:sort-state="sortState = $event"
+    @update:selected-row-keys="selectedRowKeys = $event"
   />
 </template>
 ```
 
 ## Props
 
-| 属性 | 类型 | 默认值 | 说明 |
+| Prop | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `columns` | `TableColumn[]` | `[]` | 列定义 |
-| `dataSource` | `Record<string, unknown>[]` | `[]` | 行数据 |
-| `rowKey` | `string \| ((record, index) => string \| number) \| undefined` | `undefined` | 行 key |
-| `loading` | `boolean` | `false` | 加载态 |
-| `emptyText` | `string` | `'暂无数据'` | 默认空状态文案 |
-| `pagination` | `false \| TablePaginationConfig` | `false` | 内建分页配置 |
+| `columns` | `TableColumn[]` | `[]` | Column definitions. |
+| `dataSource` | `Record<string, unknown>[]` | `[]` | Row data. |
+| `rowKey` | `string \| ((record, index) => string \| number) \| undefined` | `undefined` | Primitive row key resolver. |
+| `loading` | `boolean` | `false` | Loading state. |
+| `emptyText` | `string` | `'暂无数据'` | Default empty copy. |
+| `pagination` | `false \| TablePaginationConfig` | `false` | Built-in pagination config. |
+| `sortState` | `TableSortState \| undefined` | `undefined` | Controlled single-column sort state. |
+| `defaultSortState` | `TableSortState \| undefined` | `undefined` | Uncontrolled sort state seed. |
+| `rowSelection` | `TableRowSelection \| undefined` | `undefined` | Checkbox selection config. |
 
-`TableColumn` 最小结构：
+## Events
 
-```ts
-type TableColumn = {
-  key: string;
-  title: string;
-  dataIndex?: string;
-  align?: 'left' | 'center' | 'right';
-  width?: number | string;
-};
-```
+- `update:sortState`
+- `sortChange`
+- `update:selectedRowKeys`
+- `selectionChange`
 
-## Slots
+## Covered In M7
 
-| 名称 | 说明 |
-| --- | --- |
-| `bodyCell` | 自定义单元格内容，参数包含 `column / record / index / value` |
-| `empty` | 自定义空状态 |
+- Base table rendering, loading, empty states, and body-cell slots.
+- Built-in pagination using `LPagination`.
+- Single-column sort cycle: `undefined -> ascend -> descend -> undefined`.
+- Current-page checkbox selection with disabled-row skipping.
+- Controlled and uncontrolled selection state.
+- Accessible labels for the select-all control and row selection controls.
 
-## 当前已覆盖
+## Explicitly Out Of Scope
 
-- 基础表头和行渲染。
-- `rowKey` 字符串 / 函数。
-- `loading`、默认空状态与 `empty` slot。
-- `bodyCell` 自定义单元格。
-- 内建分页联动。
+- Column filters and filter dropdowns.
+- Multi-column sorting.
+- Expandable rows, tree tables, fixed columns, and virtual scrolling.
+- Dot-path `rowKey` resolution and complex nested `dataIndex` parsing.
 
-## 当前未覆盖
+## Compatibility Notes
 
-- `rowSelection`、`sorter`、`filters`、`expandable`。
-- 固定列、虚拟滚动、拖拽列。
-- 点号路径 `rowKey` 与复杂 dataIndex 解析。
-
-## 兼容说明
-
-- 当前 `Table` 是“基础展示表格”而不是“全功能表格”，不会为了看起来完整而提前扩 scope。
-- `pagination` 只复用现有 `LPagination` 状态机，不单独长另一套页码实现。
+- `LTable` remains a lightweight workflow-ready table, not a full ProTable clone.
+- Sorting only exposes state and interaction affordance. It does not mutate `dataSource` internally.
+- `preserveSelectedRowKeys` is opt-in and defaults to `false` for safer CRUD behavior.

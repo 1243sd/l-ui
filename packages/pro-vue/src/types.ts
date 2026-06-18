@@ -15,6 +15,7 @@ export type ProPagination = {
 
 export type SearchFormValues = Record<string, unknown>;
 export type SearchQueryValues = Record<string, unknown>;
+export type ProFormValues = SearchFormValues;
 
 export type ProQueryPayload<
   TForm extends SearchFormValues = SearchFormValues,
@@ -153,6 +154,7 @@ export type SearchFieldSchema =
   | SearchDateField
   | SearchDateRangeField
   | SearchCascaderField;
+export type ProFormSchema = SearchFieldSchema;
 
 export type ProActionIcon =
   | 'archive'

@@ -21,8 +21,9 @@ pnpm test:consumer
 
 1. It re-validates package contracts with `pnpm pack:check`.
 2. It packs the publishable workspace packages into `.artifacts/consumer-tarballs`.
-3. It copies the template app from `apps/consumer-smoke` into `.artifacts/consumer-smoke-runtime`.
-4. It installs the app with `pnpm --ignore-workspace`, forcing all internal `@lolita-ui/*` dependencies to resolve from local tarballs instead of workspace links.
+3. It copies the template app from `apps/consumer-smoke` into a fresh `.artifacts/consumer-smoke-runtime-*` directory.
+4. It records the active runtime path in `.artifacts/consumer-runtime.json`.
+5. It installs the app with `pnpm --ignore-workspace`, forcing all internal `@lolita-ui/*` dependencies to resolve from local tarballs instead of workspace links.
 
 The result is a clean external-consumer runtime that exercises:
 
@@ -49,6 +50,7 @@ This keeps failures easy to localize:
 The consumer runtime is generated into ignored directories:
 
 - `.artifacts/consumer-tarballs`
-- `.artifacts/consumer-smoke-runtime`
+- `.artifacts/consumer-runtime.json`
+- `.artifacts/consumer-smoke-runtime-*`
 
 They are disposable and may be regenerated on every run.

@@ -46,6 +46,9 @@ import type {
 } from '@lolita-ui/components-vue';
 import {
   ProSearchTable,
+  StatusTag,
+  defineValueEnum,
+  resolveValueEnumText,
   type ProBulkAction,
   type ProRowAction,
   type ProSearchTableRequest,
@@ -73,6 +76,7 @@ type ShowcaseTableRow = {
   id: string;
   name: string;
   role: string;
+  status: string;
   city: string;
   releasedAt: string;
   region: string[];
@@ -416,11 +420,35 @@ const showcaseTableColumns: TableColumn[] = [
 
 const showcaseListRows = rows.slice(0, 4);
 
+const memberStatusValueEnum = defineValueEnum({
+  active: {
+    text: '正常协作',
+    tone: 'success',
+    icon: 'check'
+  },
+  processing: {
+    text: '待审批',
+    tone: 'primary',
+    icon: 'clock'
+  },
+  archived: {
+    text: '已归档',
+    tone: 'default',
+    icon: 'pause'
+  }
+});
+
+const memberStatusOptions = Object.keys(memberStatusValueEnum).map((value) => ({
+  label: resolveValueEnumText(value, memberStatusValueEnum),
+  value
+}));
+
 const proRows: ShowcaseTableRow[] = [
   {
     id: 'user-1',
     name: 'Alice',
     role: '设计师',
+    status: 'active',
     city: '杭州',
     releasedAt: '2026-05-14',
     region: ['zhejiang', 'hangzhou', 'xihu']
@@ -429,6 +457,7 @@ const proRows: ShowcaseTableRow[] = [
     id: 'user-2',
     name: 'Bianca',
     role: '工程师',
+    status: 'processing',
     city: '南京',
     releasedAt: '2026-05-16',
     region: ['jiangsu', 'nanjing', 'qinhuai']
@@ -437,6 +466,7 @@ const proRows: ShowcaseTableRow[] = [
     id: 'user-3',
     name: 'Celine',
     role: '设计师',
+    status: 'active',
     city: '杭州',
     releasedAt: '2026-05-18',
     region: ['zhejiang', 'hangzhou', 'xihu']
@@ -445,6 +475,7 @@ const proRows: ShowcaseTableRow[] = [
     id: 'user-4',
     name: 'Derek',
     role: '工程师',
+    status: 'archived',
     city: '南京',
     releasedAt: '2026-05-20',
     region: ['jiangsu', 'nanjing', 'qinhuai']
@@ -453,6 +484,7 @@ const proRows: ShowcaseTableRow[] = [
     id: 'user-5',
     name: 'Elena',
     role: '设计师',
+    status: 'processing',
     city: '杭州',
     releasedAt: '2026-05-22',
     region: ['zhejiang', 'hangzhou', 'xihu']
@@ -461,6 +493,7 @@ const proRows: ShowcaseTableRow[] = [
     id: 'user-6',
     name: 'Felix',
     role: '工程师',
+    status: 'active',
     city: '南京',
     releasedAt: '2026-05-24',
     region: ['jiangsu', 'nanjing', 'qinhuai']
@@ -469,6 +502,7 @@ const proRows: ShowcaseTableRow[] = [
     id: 'user-7',
     name: 'Gina',
     role: '设计师',
+    status: 'archived',
     city: '杭州',
     releasedAt: '2026-05-26',
     region: ['zhejiang', 'hangzhou', 'xihu']
@@ -477,6 +511,7 @@ const proRows: ShowcaseTableRow[] = [
     id: 'user-8',
     name: 'Hugo',
     role: '工程师',
+    status: 'active',
     city: '南京',
     releasedAt: '2026-05-28',
     region: ['jiangsu', 'nanjing', 'qinhuai']
@@ -487,6 +522,7 @@ const columns: ProTableColumn<ShowcaseTableRow>[] = [
   { key: 'id', title: '编号', dataIndex: 'id' },
   { key: 'name', title: '成员', dataIndex: 'name', sortable: true },
   { key: 'role', title: '角色', dataIndex: 'role' },
+  { key: 'status', title: '状态', dataIndex: 'status' },
   { key: 'city', title: '城市', dataIndex: 'city' },
   { key: 'releasedAt', title: '发布日期', dataIndex: 'releasedAt', sortable: true }
 ];
@@ -522,6 +558,13 @@ const searchSchema: SearchFieldSchema[] = [
     dateRangePickerProps: { allowClear: true }
   },
   {
+    name: 'status',
+    label: '状态',
+    type: 'select',
+    options: memberStatusOptions,
+    selectProps: { allowClear: true }
+  },
+  {
     name: 'region',
     label: '地区',
     type: 'cascader',
@@ -549,6 +592,7 @@ const buildDeterministicResult = (
 ) => {
   const keyword = String(queryValues.keyword ?? '').trim().toLowerCase();
   const role = String(queryValues.role ?? '').trim();
+  const status = String(queryValues.status ?? '').trim();
   const releasedAt = String(queryValues.releasedAt ?? '').trim();
   const window = isDateRangeQueryValue(queryValues.window) ? queryValues.window : undefined;
   const region = Array.isArray(queryValues.region)
@@ -558,6 +602,7 @@ const buildDeterministicResult = (
   const filtered = proRows.filter((item) => {
     const matchesKeyword = keyword.length === 0 || item.name.toLowerCase().includes(keyword);
     const matchesRole = role.length === 0 || item.role === role;
+    const matchesStatus = status.length === 0 || item.status === status;
     const matchesReleasedAt = releasedAt.length === 0 || item.releasedAt === releasedAt;
     const matchesWindow =
       !window ||
@@ -566,7 +611,14 @@ const buildDeterministicResult = (
       region.length === 0 ||
       region.every((segment, index) => item.region[index] === segment);
 
-    return matchesKeyword && matchesRole && matchesReleasedAt && matchesWindow && matchesRegion;
+    return (
+      matchesKeyword &&
+      matchesRole &&
+      matchesStatus &&
+      matchesReleasedAt &&
+      matchesWindow &&
+      matchesRegion
+    );
   });
 
   const sorted = [...filtered];
@@ -1931,7 +1983,11 @@ onBeforeUnmount(() => {
               :retries="qaScenario === 'pro-error' ? 0 : 1"
               :initial-pagination="{ current: 1, pageSize: 6, total: 0 }"
               @update:selected-row-keys="onProSelectedRowKeysChange"
-            />
+            >
+              <template #cell-status="{ row }">
+                <StatusTag :value="row.status" :value-enum="memberStatusValueEnum" />
+              </template>
+            </ProSearchTable>
             <div class="demo-readout">
               <span>场景反馈</span>
               <strong>{{ proFeedback }}</strong>

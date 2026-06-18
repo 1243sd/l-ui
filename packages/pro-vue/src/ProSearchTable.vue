@@ -1,14 +1,7 @@
 <script setup lang="ts">
 import {
   LButton,
-  LCascader,
-  LDatePicker,
-  LDateRangePicker,
-  LForm,
-  LFormItem,
-  LInput,
   LPagination,
-  LSelect,
   LTable,
   type TableSortState
 } from '@lolita-ui/components-vue';
@@ -19,23 +12,27 @@ import {
   normalizePagination,
   type PaginationState
 } from '@lolita-ui/utils';
-import { computed, onMounted, reactive, ref, useSlots, watch } from 'vue';
-import { buildDefaultFormValues, serializeQueryValues } from './searchSchema';
-import type {
-  ProActionIcon,
-  ProBulkAction,
-  ProBulkActionContext,
-  ProRowAction,
-  ProRowKey,
+import { computed, onMounted, reactive, ref, useSlots, watch } from 'vue'; 
+import ProBatchActionBar from './ProBatchActionBar.vue'; 
+import ProQueryFilter from './ProQueryFilter.vue'; 
+import {
+  hasProActionIcon,
+  resolveProActionIconMarkup,
+  resolveProIconMarkup
+} from './proIcons';
+import { buildDefaultFormValues, serializeQueryValues } from './searchSchema'; 
+import type { 
+  ProBulkAction, 
+  ProRowAction, 
+  ProRowKey, 
   ProRowSelection,
   ProSearchTableLifecycle,
   ProSearchTableRequest,
   ProTableColumn,
   ProToolbarAction,
   SearchFieldSchema,
-  SearchFieldSelectValue,
-  SearchQueryValues
-} from './types';
+  SearchQueryValues 
+} from './types'; 
 
 type TableRow = Record<string, unknown>;
 type SearchForm = Record<string, unknown>;
@@ -45,30 +42,8 @@ type QueryExecutionOptions = {
 };
 
 const ACTION_COLUMN_KEY = '__actions';
-const SEARCH_VISIBLE_FIELD_COUNT = 4;
 
-const PRO_ICON_MARKUP: Record<ProActionIcon, string> = {
-  archive:
-    '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="4" width="12" height="3.5" rx="1.5"/><path d="M5.5 8.5h9v6.75A1.75 1.75 0 0 1 12.75 17h-5.5A1.75 1.75 0 0 1 5.5 15.25V8.5Z"/><path d="M8 11h4"/></svg>',
-  close:
-    '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M6 6l8 8"/><path d="M14 6l-8 8"/></svg>',
-  eye:
-    '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2.5 10s2.6-4.25 7.5-4.25S17.5 10 17.5 10s-2.6 4.25-7.5 4.25S2.5 10 2.5 10Z"/><circle cx="10" cy="10" r="2.15"/></svg>',
-  filter:
-    '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 5.5h13"/><path d="M6.5 10h7"/><path d="M8.5 14.5h3"/></svg>',
-  plus:
-    '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 4.5v11"/><path d="M4.5 10h11"/></svg>',
-  refresh:
-    '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16 9.75A6 6 0 1 1 9.7 4"/><path d="M12.75 4H16v3.25"/></svg>',
-  reset:
-    '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 6.25V3.75h2.5"/><path d="M4.2 4.2A7 7 0 1 1 3 10"/></svg>',
-  search:
-    '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.75" cy="8.75" r="4.75"/><path d="M12.5 12.5 16 16"/></svg>',
-  sparkles:
-    '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m10 3 1.2 3.4L14.6 7.6l-3.4 1.2L10 12.2 8.8 8.8 5.4 7.6l3.4-1.2L10 3Z"/><path d="m15.1 12.7.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6.6-1.6Z"/><path d="m4.8 11.6.45 1.15 1.15.45-1.15.45-.45 1.15-.45-1.15-1.15-.45 1.15-.45.45-1.15Z"/></svg>'
-};
-
-const slots = useSlots();
+const slots = useSlots(); 
 
 const props = withDefaults(
   defineProps<{
@@ -116,7 +91,6 @@ const pagination = reactive<PaginationState>(normalizePagination(props.initialPa
 const sortState = ref<TableSortState | undefined>(undefined);
 const pendingRowActionKeys = reactive<Record<string, boolean>>({});
 const pendingToolbarActionKeys = reactive<Record<string, boolean>>({});
-const pendingBulkActionKeys = reactive<Record<string, boolean>>({});
 const selectedRowSnapshots = reactive<Record<string, TableRow>>({});
 
 const rowSelectionConfig = computed(() => props.rowSelection);
@@ -142,22 +116,13 @@ const mergedSelectedRowKeys = computed<TableSelectionKey[]>(() =>
     ? rowSelectionConfig.value?.selectedRowKeys ?? []
     : internalSelectedRowKeys.value
 );
-const isSearchCollapsible = computed(
-  () => props.searchSchema.length > SEARCH_VISIBLE_FIELD_COUNT
-);
-const collapsedSearchSchema = computed(() =>
-  props.searchSchema.slice(SEARCH_VISIBLE_FIELD_COUNT)
-);
-const searchExpanded = ref(false);
-const visibleSearchSchema = computed(() =>
-  isSearchCollapsible.value && !searchExpanded.value
-    ? props.searchSchema.slice(0, SEARCH_VISIBLE_FIELD_COUNT)
-    : props.searchSchema
-);
 const hasRowActions = computed(
   () => props.rowActions.length > 0 || Boolean(slots['row-actions'])
 );
 const hasToolbarSlot = computed(() => Boolean(slots.toolbar));
+const forwardedSearchFieldSchemas = computed(() =>
+  props.searchSchema.filter((field) => Boolean(slots[`search-field-${field.name}`]))
+);
 const effectiveRowKey = computed<ProRowKey<TableRow>>(() => props.rowKey ?? 'id');
 const skipSymbol = Symbol('skip-query');
 const missingRowKeyWarning =
@@ -228,22 +193,6 @@ const resolveRowsForKeys = (keys: TableSelectionKey[]): TableRow[] =>
     .map((key) => selectedRowSnapshots[String(key)])
     .filter((row): row is TableRow => row !== undefined);
 
-const hasMeaningfulSearchValue = (value: unknown): boolean => {
-  if (value === undefined || value === null) {
-    return false;
-  }
-
-  if (typeof value === 'string') {
-    return value.trim().length > 0;
-  }
-
-  if (Array.isArray(value)) {
-    return value.length > 0 && value.some((item) => hasMeaningfulSearchValue(item));
-  }
-
-  return true;
-};
-
 const commitSelectedRowKeys = (nextKeys: TableSelectionKey[]): void => {
   if (!isSelectionControlled.value) {
     internalSelectedRowKeys.value = nextKeys;
@@ -308,16 +257,6 @@ const selectedRows = computed<TableRow[]>(() =>
   resolveRowsForKeys(mergedSelectedRowKeys.value)
 );
 
-const buildBulkActionContext = (): ProBulkActionContext<TableRow> => ({
-  selectedRowKeys: [...mergedSelectedRowKeys.value],
-  selectedRows: [...selectedRows.value],
-  clearSelection,
-  refresh: async () => {
-    await runQuery();
-  },
-  sortState: sortState.value
-});
-
 const toolbarSlotContext = computed(() => ({
   loading: loading.value,
   refresh: runQuery,
@@ -378,28 +317,6 @@ const runRowAction = async (
     }
   } finally {
     pendingRowActionKeys[stateKey] = false;
-  }
-};
-
-const runBulkAction = async (action: ProBulkAction<TableRow>): Promise<void> => {
-  const context = buildBulkActionContext();
-  pendingBulkActionKeys[action.key] = true;
-
-  try {
-    await Promise.resolve(action.onClick(context));
-
-    if (action.refreshOnSuccess !== false) {
-      await runQuery({
-        clearSelectionOnSuccess: action.clearSelectionOnSuccess !== false
-      });
-      return;
-    }
-
-    if (action.clearSelectionOnSuccess !== false) {
-      clearSelection();
-    }
-  } finally {
-    pendingBulkActionKeys[action.key] = false;
   }
 };
 
@@ -473,11 +390,8 @@ const onSearch = async () => {
   await runQuery({ clearSelectionOnSuccess: true });
 };
 
-const onReset = async () => {
-  Object.keys(formValues).forEach((key) => {
-    delete formValues[key];
-  });
-  Object.assign(formValues, buildDefaultForm());
+const onReset = async (nextValues?: SearchForm) => {
+  replaceFormValues(nextValues ?? buildDefaultForm());
   Object.assign(pagination, mergePagination(pagination, { current: 1 }));
   await runQuery({ clearSelectionOnSuccess: true });
 };
@@ -504,38 +418,11 @@ const onSortChange = async (nextSortState: TableSortState | undefined) => {
   await runQuery({ clearSelectionOnSuccess: true });
 };
 
-const resolveFieldWidth = (width: SearchFieldSchema['width']): string | undefined => {
-  if (typeof width === 'number') {
-    return `${width}px`;
-  }
-  return width;
-};
-
-const isSelectFieldValue = (value: unknown): value is SearchFieldSelectValue =>
-  typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
-
-const isDateRangeFieldValue = (value: unknown): value is [string, string] =>
-  Array.isArray(value) &&
-  value.length === 2 &&
-  value.every((item) => typeof item === 'string');
-
-const resolveSelectFieldValue = (
-  fieldName: string
-): SearchFieldSelectValue | undefined => {
-  const value = formValues[fieldName];
-  return isSelectFieldValue(value) ? value : undefined;
-};
-
-const resolveDateRangeFieldValue = (fieldName: string): [string, string] | undefined => {
-  const value = formValues[fieldName];
-  return isDateRangeFieldValue(value) ? value : undefined;
-};
-
-const resolveCascaderFieldValue = (fieldName: string): string[] | undefined => {
-  const value = formValues[fieldName];
-  return Array.isArray(value) && value.every((item) => typeof item === 'string')
-    ? value
-    : undefined;
+const replaceFormValues = (nextValues: SearchForm): void => {
+  Object.keys(formValues).forEach((key) => {
+    delete formValues[key];
+  });
+  Object.assign(formValues, nextValues);
 };
 
 const visibleToolbarActions = computed(() =>
@@ -543,177 +430,30 @@ const visibleToolbarActions = computed(() =>
 );
 
 const visibleBulkActions = computed(() => {
-  const context = buildBulkActionContext();
+  const context = {
+    selectedRowKeys: [...mergedSelectedRowKeys.value],
+    selectedRows: [...selectedRows.value],
+    clearSelection,
+    refresh: runQuery,
+    sortState: sortState.value
+  };
+
   return props.bulkActions.filter((action) => action.visible?.(context) ?? true);
 });
 
-const hiddenSearchFieldCount = computed(() =>
-  Math.max(props.searchSchema.length - SEARCH_VISIBLE_FIELD_COUNT, 0)
-);
-
-const hiddenActiveFilterCount = computed(() =>
-  collapsedSearchSchema.value.reduce((count, field) => {
-    return count + (hasMeaningfulSearchValue(formValues[field.name]) ? 1 : 0);
-  }, 0)
-);
-
-const showSelectionHint = computed(
+const showBatchActionBar = computed(
   () => selectionEnabled.value && (visibleBulkActions.value.length > 0 || mergedSelectedRowKeys.value.length > 0)
-);
-
-const searchSummaryLabel = computed(() => {
-  if (props.searchSchema.length === 0) {
-    return '未配置筛选';
-  }
-
-  if (isSearchCollapsible.value && !searchExpanded.value) {
-    return `${visibleSearchSchema.value.length}/${props.searchSchema.length} 常用`;
-  }
-
-  return `${props.searchSchema.length} 项筛选`;
-});
-
-const searchDetailLabel = computed(() => {
-  if (props.searchSchema.length === 0) {
-    return '支持自定义';
-  }
-
-  if (hiddenActiveFilterCount.value > 0) {
-    return '高级已生效';
-  }
-
-  if (searchExpanded.value && hiddenSearchFieldCount.value > 0) {
-    return '高级已展开';
-  }
-
-  if (hiddenSearchFieldCount.value > 0) {
-    return '高级待展开';
-  }
-
-  return '支持回车快速查询';
-});
-
-const searchDetailBadgeLabel = computed(() => {
-  if (hiddenActiveFilterCount.value > 0) {
-    return String(hiddenActiveFilterCount.value);
-  }
-
-  if (!searchExpanded.value && hiddenSearchFieldCount.value > 0) {
-    return `+${hiddenSearchFieldCount.value}`;
-  }
-
-  return '';
-});
-
-const searchToggleText = computed(() =>
-  searchExpanded.value ? '收起' : '高级'
-);
-
-const searchToggleBadgeLabel = computed(() => {
-  if (searchExpanded.value || hiddenSearchFieldCount.value === 0) {
-    return '';
-  }
-
-  return hiddenActiveFilterCount.value > 0
-    ? String(hiddenActiveFilterCount.value)
-    : `+${hiddenSearchFieldCount.value}`;
-});
-
-const selectionHintTitle = computed(() =>
-  mergedSelectedRowKeys.value.length > 0
-    ? `${mergedSelectedRowKeys.value.length} 项已选`
-    : '批量待命'
-);
-
-const selectionHintDescription = computed(() =>
-  mergedSelectedRowKeys.value.length > 0 ? '可执行批量操作' : '选中后启用'
 );
 
 const resultCountLabel = computed(() => `${pagination.total} 条`);
 const pageMetaLabel = computed(() => `${pagination.current}/${totalPages.value} 页`);
 
-const inferActionIcon = (key: string): ProActionIcon | undefined => {
-  const normalized = key.trim().toLowerCase();
-
-  if (
-    normalized.includes('create') ||
-    normalized.includes('add') ||
-    normalized.includes('new')
-  ) {
-    return 'plus';
-  }
-
-  if (
-    normalized.includes('refresh') ||
-    normalized.includes('reload') ||
-    normalized.includes('retry') ||
-    normalized.includes('requery')
-  ) {
-    return 'refresh';
-  }
-
-  if (normalized.includes('archive')) {
-    return 'archive';
-  }
-
-  if (
-    normalized.includes('inspect') ||
-    normalized.includes('view') ||
-    normalized.includes('detail') ||
-    normalized.includes('preview')
-  ) {
-    return 'eye';
-  }
-
-  if (
-    normalized.includes('clear') ||
-    normalized.includes('close') ||
-    normalized.includes('remove')
-  ) {
-    return 'close';
-  }
-
-  return undefined;
-};
-
-const resolveActionIcon = (action: { key: string; icon?: ProActionIcon }): ProActionIcon | undefined =>
-  action.icon ?? inferActionIcon(action.key);
-
-const hasActionIcon = (action: { key: string; icon?: ProActionIcon }): boolean =>
-  resolveActionIcon(action) !== undefined;
-
-const renderIconMarkup = (icon: ProActionIcon): string => PRO_ICON_MARKUP[icon];
-
-const resolveActionIconMarkup = (action: { key: string; icon?: ProActionIcon }): string => {
-  const icon = resolveActionIcon(action);
-  return icon ? renderIconMarkup(icon) : '';
-};
-
-const toggleSearchExpanded = (): void => {
-  if (!isSearchCollapsible.value) {
-    return;
-  }
-
-  searchExpanded.value = !searchExpanded.value;
-};
+const hasActionIcon = hasProActionIcon;
+const renderIconMarkup = resolveProIconMarkup;
+const resolveActionIconMarkup = resolveProActionIconMarkup;
 
 const resolveVisibleRowActions = (row: TableRow, index: number): ProRowAction<TableRow>[] =>
   props.rowActions.filter((action) => action.visible?.(row, index) ?? true);
-
-const isBulkActionDisabled = (action: ProBulkAction<TableRow>): boolean => {
-  const context = buildBulkActionContext();
-  return (
-    loading.value ||
-    pendingBulkActionKeys[action.key] ||
-    mergedSelectedRowKeys.value.length === 0 ||
-    (action.disabled?.(context) ?? false)
-  );
-};
-
-const isBulkActionLoading = (action: ProBulkAction<TableRow>): boolean => {
-  const context = buildBulkActionContext();
-  return pendingBulkActionKeys[action.key] || (action.loading?.(context) ?? false);
-};
 
 watch(
   rows,
@@ -753,13 +493,7 @@ watch(
 watch(
   () => props.searchSchema,
   () => {
-    Object.keys(formValues).forEach((key) => {
-      delete formValues[key];
-    });
-    Object.assign(formValues, buildDefaultForm());
-    if (props.searchSchema.length <= SEARCH_VISIBLE_FIELD_COUNT) {
-      searchExpanded.value = false;
-    }
+    replaceFormValues(buildDefaultForm());
   }
 );
 
@@ -779,135 +513,29 @@ defineExpose({
   <section class="l-pro-table">
     <div class="l-pro-table__search">
       <slot name="search" :form-values="formValues">
-        <LForm class="l-pro-table__search-form" :model="formValues">
-          <div class="l-pro-table__fields">
-            <LFormItem
-              v-for="field in visibleSearchSchema"
-              :key="field.name"
-              class="l-pro-table__field"
-              :label="field.label"
-              :name="field.name"
-              :style="{ width: resolveFieldWidth(field.width) }"
-            >
-              <slot :name="`search-field-${field.name}`" :field="field" :form-values="formValues">
-                <LInput
-                  v-if="field.type === 'text'"
-                  :value="String(formValues[field.name] ?? '')"
-                  :placeholder="field.placeholder || `请输入${field.label}`"
-                  v-bind="field.inputProps"
-                  @update:value="(nextValue) => (formValues[field.name] = nextValue)"
-                  @keydown.enter="onSearch"
-                />
-                <LSelect
-                  v-else-if="field.type === 'select'"
-                  :options="field.options"
-                  :value="resolveSelectFieldValue(field.name)"
-                  :placeholder="field.placeholder || `请选择${field.label}`"
-                  v-bind="field.selectProps"
-                  @update:value="(nextValue) => (formValues[field.name] = nextValue)"
-                />
-                <LDatePicker
-                  v-else-if="field.type === 'date'"
-                  :value="
-                    typeof formValues[field.name] === 'string'
-                      ? String(formValues[field.name])
-                      : undefined
-                  "
-                  :placeholder="field.placeholder || `请选择${field.label}`"
-                  v-bind="field.datePickerProps"
-                  @update:value="(nextValue) => (formValues[field.name] = nextValue)"
-                />
-                <LDateRangePicker
-                  v-else-if="field.type === 'dateRange'"
-                  :value="resolveDateRangeFieldValue(field.name)"
-                  v-bind="field.dateRangePickerProps"
-                  @update:value="(nextValue) => (formValues[field.name] = nextValue)"
-                />
-                <LCascader
-                  v-else
-                  :options="field.options"
-                  :value="resolveCascaderFieldValue(field.name)"
-                  :placeholder="field.placeholder || `请选择${field.label}`"
-                  v-bind="field.cascaderProps"
-                  @update:value="(nextValue) => (formValues[field.name] = nextValue)"
-                />
-              </slot>
-            </LFormItem>
-          </div>
-          <div class="l-pro-table__search-footer">
-            <div class="l-pro-table__search-overview">
-              <div class="l-pro-table__search-chips">
-                <span class="l-pro-table__stat-chip" data-testid="pro-search-summary">
-                  <span
-                    class="l-pro-table__icon"
-                    aria-hidden="true"
-                    v-html="renderIconMarkup('sparkles')"
-                  />
-                  <span>{{ searchSummaryLabel }}</span>
-                </span>
-                <span class="l-pro-table__stat-chip l-pro-table__stat-chip--accent">
-                  <span
-                    class="l-pro-table__icon"
-                    aria-hidden="true"
-                    v-html="renderIconMarkup(hiddenActiveFilterCount > 0 ? 'filter' : 'sparkles')"
-                  />
-                  <span>{{ searchDetailLabel }}</span>
-                  <span v-if="searchDetailBadgeLabel" class="l-pro-table__badge">
-                    {{ searchDetailBadgeLabel }}
-                  </span>
-                </span>
-              </div>
-              <LButton
-                v-if="isSearchCollapsible"
-                class="l-pro-table__search-toggle"
-                data-testid="pro-search-toggle"
-                type="text"
-                :aria-expanded="searchExpanded"
-                @click="toggleSearchExpanded"
-              >
-                <span
-                  class="l-pro-table__icon"
-                  aria-hidden="true"
-                  v-html="renderIconMarkup('filter')"
-                />
-                <span>{{ searchToggleText }}</span>
-                <span v-if="searchToggleBadgeLabel" class="l-pro-table__badge">
-                  {{ searchToggleBadgeLabel }}
-                </span>
-              </LButton>
-            </div>
-            <div class="l-pro-table__search-actions">
-              <LButton
-                class="l-pro-table__action-button l-pro-table__action-button--primary"
-                data-testid="pro-search-submit"
-                type="primary"
-                :loading="loading"
-                @click="onSearch"
-              >
-                <span
-                  class="l-pro-table__icon"
-                  aria-hidden="true"
-                  v-html="renderIconMarkup('search')"
-                />
-                查询
-              </LButton>
-              <LButton
-                class="l-pro-table__action-button"
-                data-testid="pro-search-reset"
-                type="dashed"
-                :disabled="loading"
-                @click="onReset"
-              >
-                <span
-                  class="l-pro-table__icon"
-                  aria-hidden="true"
-                  v-html="renderIconMarkup('reset')"
-                />
-                重置
-              </LButton>
-            </div>
-          </div>
-        </LForm>
+        <ProQueryFilter
+          :schema="props.searchSchema"
+          :values="formValues"
+          :loading="loading"
+          test-id-prefix="pro-search"
+          submit-text="查询"
+          reset-text="重置"
+          @update:values="replaceFormValues"
+          @submit="onSearch"
+          @reset="onReset"
+        >
+          <template
+            v-for="field in forwardedSearchFieldSchemas"
+            :key="field.name"
+            #[`search-field-${field.name}`]="slotProps"
+          >
+            <slot
+              :name="`search-field-${field.name}`"
+              :field="slotProps.field"
+              :form-values="formValues"
+            />
+          </template>
+        </ProQueryFilter>
       </slot>
     </div>
 
@@ -915,61 +543,16 @@ defineExpose({
       <slot v-if="hasToolbarSlot" name="toolbar" v-bind="toolbarSlotContext" />
       <template v-else>
         <div class="l-pro-table__toolbar-left">
-          <div
-            v-if="showSelectionHint"
-            class="l-pro-table__selection-hint"
-            data-testid="pro-selection-hint"
-          >
-            <div class="l-pro-table__selection-copy">
-              <span class="l-pro-table__selection-count">
-                <span
-                  class="l-pro-table__icon"
-                  aria-hidden="true"
-                  v-html="renderIconMarkup('sparkles')"
-                />
-                <span>{{ selectionHintTitle }}</span>
-              </span>
-              <span v-if="selectionHintDescription" class="l-pro-table__selection-note">
-                {{ selectionHintDescription }}
-              </span>
-            </div>
-            <LButton
-              v-if="mergedSelectedRowKeys.length"
-              class="l-pro-table__selection-clear"
-              type="text"
-              aria-label="清空已选"
-              title="清空已选"
-              @click="clearSelection"
-            >
-              <span
-                class="l-pro-table__icon"
-                aria-hidden="true"
-                v-html="renderIconMarkup('close')"
-              />
-              清空
-            </LButton>
-          </div>
-          <div v-if="visibleBulkActions.length" class="l-pro-table__bulk-actions">
-            <LButton
-              v-for="action in visibleBulkActions"
-              :key="action.key"
-              class="l-pro-table__toolbar-button"
-              :data-testid="`pro-bulk-action-${action.key}`"
-              :type="action.type ?? 'dashed'"
-              :danger="action.danger"
-              :disabled="isBulkActionDisabled(action)"
-              :loading="isBulkActionLoading(action)"
-              @click="runBulkAction(action)"
-            >
-              <span
-                v-if="hasActionIcon(action)"
-                class="l-pro-table__icon"
-                aria-hidden="true"
-                v-html="resolveActionIconMarkup(action)"
-              />
-              {{ action.label }}
-            </LButton>
-          </div>
+          <ProBatchActionBar
+            v-if="showBatchActionBar"
+            :actions="props.bulkActions"
+            :selected-row-keys="mergedSelectedRowKeys"
+            :selected-rows="selectedRows"
+            :clear-selection="clearSelection"
+            :refresh="runQuery"
+            :sort-state="sortState"
+            :loading="loading"
+          />
         </div>
         <div class="l-pro-table__toolbar-right">
           <div v-if="visibleToolbarActions.length" class="l-pro-table__toolbar-actions">
@@ -1074,7 +657,6 @@ defineExpose({
                   'l-pro-table__row-action-button',
                   hasActionIcon(action) && 'l-pro-table__row-action-button--icon-only'
                 ]"
-                type="text"
                 :disabled="
                   loading ||
                   (action.disabled?.(record, index) ?? false) ||

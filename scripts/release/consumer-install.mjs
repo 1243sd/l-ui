@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -8,9 +8,11 @@ const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(scriptDirectory, '..', '..');
 const templateDirectory = path.join(workspaceRoot, 'apps', 'consumer-smoke');
 const artifactsDirectory = path.join(workspaceRoot, '.artifacts');
-const runtimeDirectory = path.join(artifactsDirectory, 'consumer-smoke-runtime');
+const runtimeDirectoryPrefix = 'consumer-smoke-runtime-';
+const runtimeStatePath = path.join(artifactsDirectory, 'consumer-runtime.json');
 const tarballDirectory = path.join(artifactsDirectory, 'consumer-tarballs');
 const pnpmExecutable = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+const powershellExecutable = process.platform === 'win32' ? 'powershell.exe' : null;
 
 const releasePackages = [
   {
@@ -64,6 +66,124 @@ const runCommand = (command, args, cwd) =>
     child.on('error', reject);
   });
 
+const sleep = (delayMs) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, delayMs);
+  });
+
+const listWindowsProcesses = async (name) => {
+  if (!powershellExecutable) {
+    return [];
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = [
+      `$items = Get-CimInstance Win32_Process -Filter "name = '${name}'" -ErrorAction SilentlyContinue | Select-Object ProcessId,ExecutablePath,CommandLine`,
+      "if ($null -eq $items) { '[]' } else { @($items) | ConvertTo-Json -Compress }"
+    ].join('; ');
+    let stdout = '';
+    let stderr = '';
+    const child = spawn(powershellExecutable, ['-NoProfile', '-Command', script], {
+      cwd: workspaceRoot,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    child.on('exit', (code) => {
+      if (code !== 0) {
+        reject(new Error(stderr.trim() || `Failed to inspect ${name} processes.`));
+        return;
+      }
+
+      const output = stdout.trim();
+      if (!output) {
+        resolve([]);
+        return;
+      }
+
+      const parsed = JSON.parse(output);
+      resolve(Array.isArray(parsed) ? parsed : [parsed]);
+    });
+
+    child.on('error', reject);
+  });
+};
+
+const killRuntimeProcesses = async () => {
+  if (!powershellExecutable) {
+    return;
+  }
+
+  const processGroups = await Promise.all([
+    listWindowsProcesses('esbuild.exe'),
+    listWindowsProcesses('node.exe')
+  ]);
+
+  const runtimeProcesses = processGroups
+    .flat()
+    .filter((processInfo) => {
+      const executablePath = String(processInfo.ExecutablePath ?? '').toLowerCase();
+      const commandLine = String(processInfo.CommandLine ?? '').toLowerCase();
+      return (
+        executablePath.includes(runtimeDirectoryPrefix) ||
+        commandLine.includes(runtimeDirectoryPrefix)
+      );
+    });
+
+  for (const processInfo of runtimeProcesses) {
+    console.log(
+      `Stopping stale consumer runtime process ${processInfo.ProcessId}: ${processInfo.ExecutablePath ?? processInfo.CommandLine ?? 'unknown'}`
+    );
+    await runCommand('taskkill', ['/F', '/PID', String(processInfo.ProcessId)], workspaceRoot);
+  }
+};
+
+const cleanDirectory = async (directory) => {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await rm(directory, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      if (process.platform !== 'win32' || attempt === 3) {
+        throw error;
+      }
+
+      await killRuntimeProcesses();
+      await sleep(250 * attempt);
+    }
+  }
+};
+
+const createRuntimeDirectory = () =>
+  path.join(artifactsDirectory, `${runtimeDirectoryPrefix}${Date.now()}`);
+
+const prunePreviousRuntimeDirectories = async (activeRuntimeDirectory) => {
+  const artifactEntries = await readdir(artifactsDirectory, { withFileTypes: true });
+
+  for (const entry of artifactEntries) {
+    if (!entry.isDirectory() || !entry.name.startsWith(runtimeDirectoryPrefix)) {
+      continue;
+    }
+
+    const candidateDirectory = path.join(artifactsDirectory, entry.name);
+    if (candidateDirectory === activeRuntimeDirectory) {
+      continue;
+    }
+
+    try {
+      await cleanDirectory(candidateDirectory);
+    } catch (error) {
+      console.warn(`Skipping stale consumer runtime cleanup for ${candidateDirectory}: ${error}`);
+    }
+  }
+};
+
 const readJson = async (filePath) =>
   JSON.parse(await readFile(filePath, 'utf8'));
 
@@ -87,7 +207,7 @@ const packReleasePackage = async ({ name, directory, direct }) => {
   };
 };
 
-const installConsumerDependencies = async (tarballs) => {
+const installConsumerDependencies = async (runtimeDirectory, tarballs) => {
   const packageJsonPath = path.join(runtimeDirectory, 'package.json');
   const packageJson = await readJson(packageJsonPath);
   const overrides = Object.fromEntries(
@@ -122,10 +242,12 @@ const installConsumerDependencies = async (tarballs) => {
   );
 };
 
-await rm(runtimeDirectory, { recursive: true, force: true });
-await rm(tarballDirectory, { recursive: true, force: true });
+await killRuntimeProcesses();
+await cleanDirectory(tarballDirectory);
 await mkdir(artifactsDirectory, { recursive: true });
 await mkdir(tarballDirectory, { recursive: true });
+const runtimeDirectory = createRuntimeDirectory();
+await cleanDirectory(runtimeDirectory);
 await cp(templateDirectory, runtimeDirectory, { recursive: true });
 
 const tarballs = [];
@@ -134,6 +256,11 @@ for (const releasePackage of releasePackages) {
   tarballs.push(await packReleasePackage(releasePackage));
 }
 
-await installConsumerDependencies(tarballs);
+await installConsumerDependencies(runtimeDirectory, tarballs);
+await writeFile(
+  runtimeStatePath,
+  `${JSON.stringify({ runtimeDirectory }, null, 2)}\n`
+);
+await prunePreviousRuntimeDirectories(runtimeDirectory);
 
 console.log(`Prepared consumer runtime at ${runtimeDirectory}.`);

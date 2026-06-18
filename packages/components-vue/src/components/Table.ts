@@ -62,6 +62,22 @@ const formatCellText = (value: unknown): string => {
   return String(value);
 };
 
+const resolveRowSelectionLabel = (
+  record: Record<string, unknown>,
+  rowKey: string | number
+): string => {
+  const preferredFields = ['name', 'title', 'label'];
+
+  for (const field of preferredFields) {
+    const value = record[field];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return `Select row ${value}`;
+    }
+  }
+
+  return `Select row ${String(rowKey)}`;
+};
+
 const resolveRowKey = (
   rowKey: TableRowKey | undefined,
   record: Record<string, unknown>,
@@ -532,6 +548,7 @@ export const LTable = defineComponent({
                                     checked: mergedSelectedRowKeys.value.includes(rowKey),
                                     disabled: rowDisabled,
                                     'data-testid': `l-table-row-select-${String(rowKey)}`,
+                                    'aria-label': resolveRowSelectionLabel(record, rowKey),
                                     onChange: (event: Event) =>
                                       toggleRowSelection(
                                         rowKey,

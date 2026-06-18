@@ -62,6 +62,7 @@ export default defineConfig({
         text: '复杂选择与搬运（M4）',
         items: [
           { text: 'DatePicker', link: '/components/date-picker' },
+          { text: 'DateRangePicker', link: '/components/date-range-picker' },
           { text: 'Upload', link: '/components/upload' },
           { text: 'Tree', link: '/components/tree' },
           { text: 'Cascader', link: '/components/cascader' },
@@ -80,7 +81,10 @@ export default defineConfig({
       },
       {
         text: 'Pro',
-        items: [{ text: 'ProSearchTable', link: '/pro/pro-search-table' }]
+        items: [
+          { text: 'ProSearchTable', link: '/pro/pro-search-table' },
+          { text: 'Business Roadmap', link: '/pro/business-components-roadmap' }
+        ]
       }
     ]
   }

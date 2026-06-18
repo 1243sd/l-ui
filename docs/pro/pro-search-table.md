@@ -1,25 +1,37 @@
 # ProSearchTable
 
-`ProSearchTable` is the M5 Pro surface for schema-driven search plus linked table results.
+`ProSearchTable` is the M7 workflow surface for schema-driven CRUD search, table sorting, row selection, and bulk operations.
 
-What it now locks in:
-- `searchSchema` supports `text`, `select`, `date`, and `cascader`
-- `request` receives both raw `formValues` and serialized `queryValues`
-- `beforeQuery` may adjust `pagination.current / pageSize`, and the rendered table meta follows the adjusted request state
-- text fields update immediately but only query on explicit submit or `Enter`
-- row identity defaults to primitive `id`, otherwise `rowKey` is required
-- row actions refresh on success by default and may opt out with `refreshOnSuccess: false`
-- query failures keep previous rows visible and expose a retry path
+## What M7 Locks In
+
+- `searchSchema` supports `text`, `select`, `date`, `dateRange`, and `cascader`.
+- Request payloads carry both `formValues` and serialized `queryValues`.
+- `sortState` is part of `request`, `beforeQuery`, and `afterQuery` payloads.
+- `rowSelection` supports controlled and uncontrolled checkbox selection.
+- `bulkActions` use selected rows as first-class context and refresh plus clear selection by default.
+- Query failures keep previous rows visible and expose an explicit retry action.
 
 ## Example
 
 ```vue
 <script setup lang="ts">
-import { ProSearchTable } from '@lolita-ui/pro-vue';
+import {
+  ProSearchTable,
+  StatusTag,
+  defineValueEnum,
+  resolveValueEnumText
+} from '@lolita-ui/pro-vue';
+
+const memberStatusValueEnum = defineValueEnum({
+  active: { text: 'Active', tone: 'success', icon: 'check' },
+  processing: { text: 'Processing', tone: 'primary', icon: 'clock' },
+  archived: { text: 'Archived', tone: 'default', icon: 'pause' }
+});
 
 const columns = [
-  { key: 'name', title: 'Name', dataIndex: 'name' },
-  { key: 'releasedAt', title: 'Released', dataIndex: 'releasedAt' }
+  { key: 'name', title: 'Name', dataIndex: 'name', sortable: true },
+  { key: 'status', title: 'Status', dataIndex: 'status' },
+  { key: 'releasedAt', title: 'Released At', dataIndex: 'releasedAt', sortable: true }
 ];
 
 const searchSchema = [
@@ -30,32 +42,32 @@ const searchSchema = [
     inputProps: { allowClear: true }
   },
   {
-    name: 'role',
-    label: 'Role',
-    type: 'select',
-    options: [
-      { label: 'Designer', value: 'designer' },
-      { label: 'Engineer', value: 'engineer' }
-    ],
-    selectProps: { allowClear: true }
+    name: 'window',
+    label: 'Release Window',
+    type: 'dateRange',
+    dateRangePickerProps: { allowClear: true }
   },
   {
-    name: 'releasedAt',
-    label: 'Released At',
-    type: 'date',
-    datePickerProps: { allowClear: true }
+    name: 'status',
+    label: 'Status',
+    type: 'select',
+    options: Object.keys(memberStatusValueEnum).map((value) => ({
+      label: resolveValueEnumText(value, memberStatusValueEnum),
+      value
+    }))
   }
 ];
 
-const request = async ({ pagination, formValues, queryValues }) => {
-  console.log(formValues, queryValues);
+const request = async ({ queryValues, sortState, pagination }) => {
+  console.log(queryValues, sortState, pagination);
 
   return {
     data: [
       {
         id: 'demo-1',
-        name: String(queryValues.keyword ?? 'Demo row'),
-        releasedAt: String(queryValues.releasedAt ?? '2026-05-26')
+        name: 'Demo row',
+        status: 'processing',
+        releasedAt: '2026-06-17'
       }
     ],
     total: 1
@@ -68,59 +80,74 @@ const request = async ({ pagination, formValues, queryValues }) => {
     :columns="columns"
     :search-schema="searchSchema"
     :request="request"
-    :initial-pagination="{ current: 1, pageSize: 10, total: 0 }"
-  />
+    :row-selection="{}"
+    :bulk-actions="[
+      {
+        key: 'archive',
+        label: 'Archive',
+        onClick: async ({ selectedRowKeys }) => console.log(selectedRowKeys)
+      }
+    ]"
+  >
+    <template #cell-status="{ row }">
+      <StatusTag :value="row.status" :value-enum="memberStatusValueEnum" />
+    </template>
+  </ProSearchTable>
 </template>
 ```
 
 ## Search Schema
 
-| Field kind | Required | Supported M5 extras |
+| Field kind | Required | Supported extras |
 | --- | --- | --- |
 | `text` | `name`, `label`, `type` | `defaultValue`, `placeholder`, `width`, `inputProps.allowClear`, `toQuery` |
 | `select` | `name`, `label`, `type`, `options` | `defaultValue`, `placeholder`, `width`, `selectProps.allowClear`, `selectProps.showSearch`, `selectProps.loading`, `selectProps.notFoundContent`, `toQuery` |
 | `date` | `name`, `label`, `type` | `defaultValue`, `placeholder`, `width`, `datePickerProps.allowClear`, `datePickerProps.format`, `toQuery` |
+| `dateRange` | `name`, `label`, `type` | `defaultValue`, `placeholder`, `width`, `dateRangePickerProps.allowClear`, `dateRangePickerProps.format`, `toQuery` |
 | `cascader` | `name`, `label`, `type`, `options` | `defaultValue`, `placeholder`, `width`, `cascaderProps.allowClear`, `toQuery` |
 
-`toQuery` is optional per field. If omitted, the default query contribution is `{ [name]: value }`.
-
-Duplicate serialized query keys are invalid M5 configuration. The component warns in development and blocks the request rather than silently overwriting values.
+Default serialization remains `{ [name]: value }`. If product code needs a split payload such as `startAt` / `endAt`, provide a field-level `toQuery`.
 
 ## Request Contract
 
-`request`, `beforeQuery`, and `afterQuery` all work with two payload layers:
+`request`, `beforeQuery`, and `afterQuery` all operate on the same stable payload layers:
 
-- `formValues`: raw UI state keyed by schema field name
-- `queryValues`: serialized request payload after field-level shaping
+- `formValues`: raw UI state keyed by field name
+- `queryValues`: serialized payload after field shaping
+- `pagination`: current request pagination
+- `sortState`: current single-column sort state
 
-This keeps the UI contract stable even when the outgoing request shape differs from displayed field values. When `beforeQuery` adjusts `pagination.current` or `pageSize`, the rendered pagination meta follows the adjusted request state instead of staying on stale local values.
+This keeps outgoing request shape changes separate from the UI form contract.
 
-## Row Identity And Actions
+## Selection And Bulk Actions
 
-- `rowKey?: string | ((record, index) => string | number)` is supported
-- if `rowKey` is omitted, `ProSearchTable` uses row `id` only when every row exposes a primitive `id`
-- if neither condition is met, the component warns and blocks row rendering
+- `rowSelection` mirrors `LTable` checkbox selection semantics.
+- `preserveSelectedRowKeys` defaults to `false`.
+- Querying, paging, and sorting clear invisible selections by default.
+- `bulkActions.refreshOnSuccess` defaults to `true`.
+- `bulkActions.clearSelectionOnSuccess` defaults to `true`.
+- Toolbar and bulk-action contexts expose `refresh`, `selectedRowKeys`, `selectedRows`, `clearSelection`, and `sortState`.
 
-Row actions support:
+## Reusable Building Blocks
 
-- `visible`
-- `disabled`
-- `loading`
-- `refreshOnSuccess`
+`ProSearchTable` is still the main page-level workflow surface, but its highest-frequency list glue now maps to reusable List Pack building blocks:
 
-Toolbar and row-action slots receive `refresh` in slot context so custom actions can trigger a clean re-query without reaching into internals.
+- `ProQueryFilter`: owns the schema-driven query area and keeps the same `searchSchema` contract.
+- `ProBatchActionBar`: owns selected-count copy, disabled states, pending states, and success refresh / clear-selection behavior for bulk actions.
+- `StatusTag` + `ValueEnum`: intended for shared list-cell and filter-display semantics, so teams do not hand-roll status text plus color mappings on every page.
+
+This means teams can either use `ProSearchTable` as the full workflow surface or gradually reuse the same list contracts in custom list pages without inventing a second vocabulary.
 
 ## Default Interaction Semantics
 
-- `autoQuery` defaults to `true`
-- typing in text fields does not auto-query
-- clicking the primary search action or pressing `Enter` in a text field triggers a query
-- reset restores schema defaults, resets pagination to page 1, and re-queries
-- lifecycle-adjusted pagination stays aligned between the outgoing request and the rendered table meta
-- loading keeps previous rows visible
-- query failure keeps previous rows visible and shows a retry action
+- `autoQuery` defaults to `true`.
+- Typing in text fields does not auto-query.
+- `Enter` in a text field and the primary search button both trigger a query.
+- Reset restores schema defaults, moves pagination back to page 1, and re-queries.
+- Loading keeps old rows visible.
+- Failure keeps old rows visible and shows a retry path.
 
 ## Compatibility Notes
 
-- Aligned: four-field `searchSchema`, `formValues/queryValues` layering, retry pipeline integration, real pagination widget, default `id` row identity, action refresh control, and deterministic playground/browser-gate coverage
-- Difference: M5 does not include `dateRange`, inline edit, column pinning, drag sorting, preset persistence, or remote field builders
+- Aligned: `dateRange`, `sortState`, `rowSelection`, `bulkActions`, retry pipeline, deterministic playground scenarios, and browser-gate coverage.
+- Difference: M7 still does not include inline editing, column pinning, drag sorting, saved views, remote schema builders, or multi-column sorting.

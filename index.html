@@ -1,12 +1,54 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>l-ui</title>
+    <title>Lolita UI Workspace</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at top, rgba(255, 146, 188, 0.16), transparent 40%),
+          linear-gradient(180deg, #fff8fb, #fff);
+        color: #24131d;
+      }
+
+      main {
+        width: min(560px, calc(100vw - 32px));
+        padding: 32px;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 24px 80px rgba(124, 41, 78, 0.16);
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 28px;
+      }
+
+      p {
+        margin: 0 0 12px;
+        line-height: 1.6;
+      }
+
+      code {
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <main>
+      <h1>Root demo removed</h1>
+      <p>This workspace no longer ships a root Vite demo surface.</p>
+      <p>Use <code>pnpm dev</code> to start <code>apps/playground</code>, and keep runtime code under <code>apps/*</code> or <code>packages/*</code>.</p>
+    </main>
   </body>
 </html>

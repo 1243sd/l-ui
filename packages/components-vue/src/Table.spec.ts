@@ -191,4 +191,22 @@ describe('LTable', () => {
     await wrapper.find('.l-pagination__nav--next').trigger('click');
     expect(wrapper.emitted('update:selectedRowKeys')?.at(-1)?.[0]).toEqual(['u-1']);
   });
+
+  it('provides accessible labels for selection controls', () => {
+    const wrapper = mount(LTable as any, {
+      props: {
+        columns,
+        dataSource,
+        rowKey: 'id',
+        rowSelection: {}
+      }
+    });
+
+    expect(wrapper.get('[data-testid="l-table-select-all"]').attributes('aria-label')).toBe(
+      'Select visible rows'
+    );
+    expect(wrapper.get('[data-testid="l-table-row-select-u-1"]').attributes('aria-label')).toBe(
+      'Select row 小满'
+    );
+  });
 });
